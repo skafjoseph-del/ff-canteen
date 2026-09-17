@@ -205,9 +205,10 @@
     padding: 14px; max-width: 720px; width: 100%; margin: auto;
   }
   #docketLightbox .lb-close {
-    position: absolute; top: 8px; right: 8px; width: 36px; height: 36px;
-    border: none; border-radius: 999px; background: #e7e5e4; font-size: 1.2rem;
-    font-weight: 800; cursor: pointer; line-height: 1;
+    position: absolute; top: 8px; right: 8px; width: 44px; height: 44px;
+    border: none; border-radius: 999px; background: #e7e5e4; color: #1c1917;
+    font-size: 1.4rem; font-weight: 800; cursor: pointer; line-height: 1;
+    z-index: 5; -webkit-tap-highlight-color: transparent;
   }
   #docketLightbox .lb-title { font-weight: 800; margin: 0 40px 10px 0; font-size: 1rem; }
   #docketLightbox .lb-imgs { display: flex; flex-direction: column; gap: 12px; }
@@ -262,8 +263,16 @@
 
 
 
+<div id="docketLightbox" aria-hidden="true">
+  <div class="lb-inner" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button>
+    <div class="lb-title" id="lbTitle">Docket</div>
+    <div class="lb-imgs" id="lbImgs"></div>
+  </div>
+</div>
+
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v18';
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v19';
 const PEOPLE = [
   { id:'karin', dockets:['dockets/karin.jpg'], name:'Abigail & Mario', parent:'Karin G', pickup:'12:15', missing:false, items:[
     { id:'abigail-p-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
@@ -619,8 +628,13 @@ document.getElementById('list').addEventListener('click', (e) => {
   try { paths = JSON.parse(btn.dataset.dockets || '[]'); } catch {}
   openDocketLightbox(paths, btn.dataset.docketName || '');
 });
-document.getElementById('lbClose').addEventListener('click', closeDocketLightbox);
-document.getElementById('docketLightbox').addEventListener('click', (e) => {
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#lbClose')) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeDocketLightbox();
+    return;
+  }
   if (e.target.id === 'docketLightbox') closeDocketLightbox();
 });
 document.addEventListener('keydown', (e) => {
@@ -629,14 +643,6 @@ document.addEventListener('keydown', (e) => {
 
 render();
 </script>
-
-<div id="docketLightbox" aria-hidden="true">
-  <div class="lb-inner" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
-    <button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button>
-    <div class="lb-title" id="lbTitle">Docket</div>
-    <div class="lb-imgs" id="lbImgs"></div>
-  </div>
-</div>
 
 </body>
 </html>
