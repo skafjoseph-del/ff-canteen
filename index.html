@@ -157,11 +157,6 @@
     font-size: 1rem;
     font-weight: 800;
   }
-  .actions-reset { display: flex; gap: 8px; margin-top: 8px; }
-  .actions-reset button {
-    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--line);
-    background: var(--card); font-size: 0.8rem; font-weight: 600;
-  }
 
 
   .prep-row {
@@ -184,11 +179,9 @@
   .tab { font-size: 0.82rem; }
   .chrome-handout .search-wrap,
   .chrome-handout .filters,
-  .chrome-handout #btnReport,
-  .chrome-handout .actions-reset { display: block; }
+  .chrome-handout #btnReport { display: block; }
   body.mode-prep .search-wrap,
   body.mode-prep #btnReport { display: none; }
-  body.mode-prep .actions-reset { display: flex; }
 
 
 
@@ -219,10 +212,6 @@
   </div>
   <div class="bar"><span id="progBar"></span></div>
   <button type="button" id="btnReport">Generate observation report</button>
-  <div class="actions-reset">
-    <button type="button" id="btnResetService">Reset this service</button>
-    <button type="button" id="btnResetAll">Reset all</button>
-  </div>
 </header>
 <main id="list"></main>
 <footer class="tick-footer">Food Farmacy canteen · ticks save on this phone · orange = was missing from first 12</footer>
@@ -243,7 +232,7 @@
 
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v16';
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v17';
 const PEOPLE = [
   { id:'karin', name:'Abigail & Mario', parent:'Karin G', pickup:'12:15', missing:false, items:[
     { id:'abigail-p-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
@@ -473,19 +462,6 @@ document.getElementById('list').addEventListener('change',e=>{
   saveDone(); render();
 });
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{ view=btn.dataset.view; render(); }));
-document.getElementById('btnResetService').addEventListener('click',()=>{
-  if(!confirm(isPrepView() ? 'Clear prep ticks for this tab?' : 'Clear handout ticks for this service?')) return;
-  const svc = serviceOfView();
-  if (isPrepView()) {
-    for (const r of aggregatePrep(svc)) delete done[r.id];
-  } else {
-    for (const g of itemsForService(svc)) for (const i of g.items) delete done[i.id];
-  }
-  saveDone(); render();
-});
-document.getElementById('btnResetAll').addEventListener('click',()=>{
-  if(!confirm('Clear ALL ticks?')) return; done={}; saveDone(); render();
-});
 
 document.getElementById('search').addEventListener('input', (e) => {
   searchQuery = e.target.value || '';
