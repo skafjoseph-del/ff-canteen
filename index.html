@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Canteen Tick"/>
+<title>FF Canteen Tick · 17 Sep</title>
+<style>
+  :root {
+    --bg: #f4f1ea; --card: #fff; --ink: #1c1917; --muted: #78716c;
+    --accent: #0f766e; --line: #e7e5e4; --warn: #9a3412;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink);
+    padding: 12px 12px calc(24px + env(safe-area-inset-bottom));
+  }
+  header {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    margin: -12px -12px 12px; padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+  .tabs { display: flex; gap: 8px; }
+  .tab {
+    flex: 1; border: none; border-radius: 999px; padding: 12px 10px;
+    font-size: 0.95rem; font-weight: 600; background: #e7e5e4; color: var(--ink);
+  }
+  .tab.active { background: var(--accent); color: #fff; }
+  .progress {
+    margin-top: 10px; font-size: 0.9rem; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .bar { height: 8px; background: #e7e5e4; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .actions button {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); font-size: 0.8rem; font-weight: 600;
+  }
+  .child {
+    background: var(--card); border-radius: 14px; padding: 12px 12px 8px;
+    margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .child.complete { opacity: 0.55; }
+  .child.missing { outline: 2px solid #f59e0b; }
+  .badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 700;
+    background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 6px; margin-left: 6px;
+  }
+  .child-name { font-weight: 700; font-size: 1.05rem; }
+  .child-meta { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+  .item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 4px; border-top: 1px solid var(--line);
+    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .item input { width: 26px; height: 26px; margin-top: 1px; flex-shrink: 0; accent-color: var(--accent); }
+  .item.done .label { text-decoration: line-through; color: var(--muted); }
+  .label { font-size: 0.98rem; line-height: 1.35; flex: 1; }
+  .qty { display: inline-block; min-width: 1.6em; font-weight: 700; color: var(--accent); margin-right: 4px; }
+  .special { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--warn); font-weight: 600; }
+  
+  .search-wrap { margin-top: 10px; }
+  .search-wrap input {
+    width: 100%; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--line); font-size: 1rem;
+    background: var(--card); color: var(--ink);
+  }
+  .search-wrap input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .no-match { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 0.95rem; }
+
+  
+  .obs-wrap { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .obs-wrap label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .obs-wrap textarea {
+    width: 100%; min-height: 56px; resize: vertical; padding: 10px;
+    border-radius: 10px; border: 1px solid var(--line); font-size: 0.92rem;
+    font-family: inherit; background: #fafaf9; color: var(--ink);
+  }
+  .obs-wrap textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); background: #fff; }
+  .obs-wrap textarea.has-text { background: #fff7ed; border-color: #fdba74; }
+  body.view-report header.tick-chrome,
+  body.view-report #list,
+  body.view-report footer.tick-footer { display: none; }
+  body.view-report #reportPage { display: block; }
+  #reportPage { display: none; padding: 16px 14px 40px; max-width: 720px; margin: 0 auto; }
+  #reportPage .report-top {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg); padding: 8px 0 12px; margin: -8px 0 8px;
+  }
+  #reportPage h1 {
+    margin: 10px 0 4px; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;
+  }
+  #reportPage .report-date { color: var(--muted); font-size: 0.95rem; margin-bottom: 14px; }
+  #reportPage .report-empty {
+    background: var(--card); border: 1px dashed var(--line); border-radius: 14px;
+    padding: 28px 16px; text-align: center; color: var(--muted);
+  }
+  .obs-entry {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px; margin-bottom: 10px;
+  }
+  .obs-entry .who { font-weight: 800; font-size: 1.05rem; }
+  .obs-entry .who-meta { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+  .obs-entry .note {
+    margin-top: 10px; white-space: pre-wrap; line-height: 1.45;
+    background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 10px 12px;
+  }
+  .report-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .report-actions button {
+    flex: 1; min-width: 120px; padding: 12px; border-radius: 10px; border: none;
+    font-weight: 700; font-size: 0.9rem;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: #e7e5e4; color: var(--ink); }
+  #btnBackTick {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 10px; padding: 10px 12px; font-weight: 700; font-size: 0.9rem;
+  }
+
+  
+  .filters { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .filter-chip {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 999px; padding: 8px 12px; font-size: 0.82rem; font-weight: 700;
+  }
+  .filter-chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  
+
+  .child-tag {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #e8f5f1;
+    color: #0d5c4d;
+    font-size: 0.72rem;
+    font-weight: 800;
+    vertical-align: middle;
+  }
+
+  #btnReport {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px 12px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .actions-reset { display: flex; gap: 8px; margin-top: 8px; }
+  .actions-reset button {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); font-size: 0.8rem; font-weight: 600;
+  }
+
+
+  .prep-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .prep-row.done { opacity: 0.55; }
+  .prep-row.done .prep-name { text-decoration: line-through; }
+  .prep-qty {
+    min-width: 48px; height: 48px; border-radius: 12px;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.1rem; flex-shrink: 0;
+  }
+  .prep-row.done .prep-qty { background: #a8a29e; }
+  .prep-name { font-weight: 700; font-size: 1rem; flex: 1; }
+  .prep-row input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--accent); flex-shrink: 0; }
+  .tabs { flex-wrap: wrap; }
+  .tab { font-size: 0.82rem; }
+  .chrome-handout .search-wrap,
+  .chrome-handout .filters,
+  .chrome-handout #btnReport,
+  .chrome-handout .actions-reset { display: block; }
+  body.mode-prep .search-wrap,
+  body.mode-prep #btnReport { display: none; }
+  body.mode-prep .actions-reset { display: flex; }
+
+
+
+  footer { text-align: center; color: var(--muted); font-size: 0.7rem; margin-top: 16px; }
+</style>
+</head>
+<body>
+<header class="tick-chrome">
+  <h1>Food Farmacy · Canteen Tick</h1>
+  <div class="sub">Thu 17 Sep 2026 · 17 tickets · tap to tick off</div>
+  <div class="tabs">
+    <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
+    <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
+    <button class="tab" data-view="handout-recess" type="button">11am recess</button>
+    <button class="tab" data-view="handout-lunch" type="button">1pm lunch</button>
+  </div>
+  <div class="search-wrap">
+    <input id="search" type="search" placeholder="Search child, parent, or item…" autocomplete="off" enterkeyhint="search"/>
+  </div>
+  <div class="filters" role="group" aria-label="Completion filter">
+    <button type="button" class="filter-chip active" data-filter="all">All</button>
+    <button type="button" class="filter-chip" data-filter="incomplete">Incomplete</button>
+    <button type="button" class="filter-chip" data-filter="complete">Complete</button>
+  </div>
+  <div class="progress">
+    <span id="progText">0 / 0</span>
+    <span id="leftText"></span>
+  </div>
+  <div class="bar"><span id="progBar"></span></div>
+  <button type="button" id="btnReport">Generate observation report</button>
+  <div class="actions-reset">
+    <button type="button" id="btnResetService">Reset this service</button>
+    <button type="button" id="btnResetAll">Reset all</button>
+  </div>
+</header>
+<main id="list"></main>
+<footer class="tick-footer">Food Farmacy canteen · ticks save on this phone · orange = was missing from first 12</footer>
+
+<section id="reportPage" aria-label="Observations report">
+  <div class="report-top">
+    <button type="button" id="btnBackTick">← Back to tick list</button>
+  </div>
+  <h1>Observations</h1>
+  <div class="report-date" id="reportDate"></div>
+  <div id="reportEntries"></div>
+  <div class="report-actions">
+    <button type="button" class="btn-primary" id="btnCopyReport">Copy report</button>
+    <button type="button" class="btn-secondary" id="btnDownloadReport">Download .txt</button>
+  </div>
+</section>
+
+
+
+<script>
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v16';
+const PEOPLE = [
+  { id:'karin', name:'Abigail & Mario', parent:'Karin G', pickup:'12:15', missing:false, items:[
+    { id:'abigail-p-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
+    { id:'abigail-p-apple', qty:1, name:'Apple', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
+    { id:'mario-p-lb1', qty:1, name:'Lunch Bag 1 (Sandwich+apple)', special:'no hummus; Banana', service:'lunch', child:'Mario' },
+    { id:'mario-nudi-apple', qty:1, name:'Canteen Nudi Juice 200ml - Apple', special:'', service:'recess', child:'Mario' },
+  ]},
+  { id:'amanda', name:'Clara & Ben', parent:'Amanda T', pickup:'11:00', missing:false, items:[
+    { id:'clara-nacho', qty:1, name:'Nacho Bowl', special:'Dish up early / not too hot', service:'lunch', child:'Clara' },
+    { id:'ben-nacho', qty:1, name:'Nacho Bowl', special:'Dish up well in advance so it’s not so hot', service:'lunch', child:'Ben' },
+  ]},
+  { id:'andrea', name:'Mrs Thompson', parent:'Andrea T', pickup:'1:00pm', missing:false, items:[
+    { id:'thompson-pie', qty:1, name:'Pies - Creamy Mushroom', special:'Toronto Adventist School', service:'lunch' },
+  ]},
+  { id:'angela', name:'Siena & Francesca', parent:'Angela M', pickup:'11:00', missing:false, items:[
+    { id:'siena-toastie', qty:1, name:'Hemp Cheese & Tomato Toastie', special:'', service:'lunch', child:'Siena' },
+    { id:'siena-pie', qty:1, name:'Pies - Creamy Mushroom', special:'', service:'lunch', child:'Siena' },
+    { id:'fran-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch', child:'Francesca' },
+    { id:'fran-bread', qty:1, name:'Canteen GF Banana Bread', special:'', service:'recess', child:'Francesca' },
+  ]},
+  { id:'musk-kids', name:'Ruthie & Abigail Musk', parent:'Asmitra M', pickup:'Asmitra order', missing:false, items:[
+    { id:'musk-loco', qty:1, name:'Loco Love - Chewy Caramel', special:'Confirm which child', service:'recess' },
+    { id:'musk-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'Confirm which child', service:'lunch' },
+  ]},
+  { id:'hannah-deves', name:'Hannah Deves', parent:'Alexis D', pickup:'10:30 · Toronto', missing:false, items:[
+    { id:'hd-loco', qty:1, name:'Loco Love - Double Chocolate', special:'', service:'recess' },
+    { id:'hd-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
+  ]},
+  { id:'isabella', name:'Isabella Wallace', parent:'', pickup:'SP-37', missing:false, items:[
+    { id:'isa-loco', qty:1, name:'Loco Love - Double Chocolate', special:'', service:'recess' },
+    { id:'isa-juice', qty:1, name:'Nudi Juice 200ml - Orange', special:'', service:'recess' },
+    { id:'isa-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
+  ]},
+  { id:'jaedeok', name:'Jaedeok Y', parent:'', pickup:'10:00', missing:false, items:[
+    { id:'jae-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
+  ]},
+  { id:'krystal', name:'Jada', parent:'Krystal', pickup:'11:00', missing:false, items:[
+    { id:'kry-acai', qty:1, name:'Acai Cup', special:'', service:'recess' },
+    { id:'kry-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'', service:'lunch' },
+  ]},
+  { id:'letitia', name:'Letitia C', parent:'', pickup:'11:00', missing:false, items:[
+    { id:'let-fruit', qty:1, name:'Fruit Salad', special:'', service:'recess' },
+    { id:'let-cookie', qty:1, name:'GF Buckwheat Choc Chip Cookie', special:'', service:'recess' },
+    { id:'let-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
+    { id:'let-toastie', qty:1, name:'Refried Beans Toastie', special:'', service:'lunch' },
+    { id:'let-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
+  ]},
+  { id:'oscar', name:'Oscar Roki', parent:'Luke R', pickup:'11:00', missing:false, items:[
+    { id:'oscar-acai', qty:1, name:'Acai Cup', special:'', service:'recess' },
+  ]},
+  { id:'staffords', name:'Hannah & Koen', parent:'Staffords', pickup:'SP-36', missing:false, items:[
+    { id:'hs-milk', qty:1, name:'Milks (Coconut NSA) - Vanilla', special:'', service:'recess', child:'Hannah' },
+    { id:'hs-parfait', qty:1, name:'Parfait Love Cup', special:'', service:'recess', child:'Hannah' },
+    { id:'hs-tempeh', qty:1, name:'Tempeh Chips - Sea Weed', special:'', service:'recess', child:'Hannah' },
+    { id:'hs-pie', qty:1, name:'Pies - Creamy Mushroom', special:'', service:'lunch', child:'Hannah' },
+    { id:'koen-bread', qty:1, name:'Canteen GF Banana Bread', special:'', service:'recess', child:'Koen' },
+    { id:'koen-loco', qty:1, name:'Loco Love - Hazelnut Butter Praline', special:'', service:'recess', child:'Koen' },
+    { id:'koen-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch', child:'Koen' },
+  ]},
+  { id:'karina', name:'Chloe & Mathias', parent:'Karina M', pickup:'10:00', missing:true, items:[
+    { id:'karina-bread', qty:2, name:'Canteen GF Banana Bread', special:'', service:'recess' },
+    { id:'karina-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
+  ]},
+  { id:'olivia', name:'Zahila & Zamira', parent:'Olivia P', pickup:'9:00', missing:true, items:[
+    { id:'olivia-bread', qty:1, name:'Canteen GF Banana Bread', special:'', service:'recess' },
+    { id:'olivia-cookie', qty:1, name:'GF Buckwheat Choc Chip Cookie', special:'', service:'recess' },
+    { id:'olivia-nacho', qty:2, name:'Nacho Bowl', special:'', service:'lunch' },
+  ]},
+  { id:'melissa', name:'Grace & Eloise', parent:'Melissa W', pickup:'10:00', missing:true, items:[
+    { id:'mel-blueberry', qty:1, name:'Canteen GF Banana Blueberry Bread', special:'', service:'recess' },
+    { id:'mel-loco', qty:1, name:'Loco Love - Chewy Caramel', special:'', service:'recess' },
+    { id:'mel-nacho', qty:1, name:'Nacho Bowl', special:'Please add yoghurt', service:'lunch' },
+    { id:'mel-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'', service:'lunch' },
+  ]},
+  { id:'ximena', name:'Tahlia', parent:'Ximena G', pickup:'11:00', missing:true, items:[
+    { id:'ximena-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch' },
+    { id:'ximena-apple', qty:1, name:'Apple', special:'From Lunch Bag 2', service:'lunch' },
+  ]},
+  { id:'maja', name:'Maja Rees (Kindy)', parent:'Joel R', pickup:'today', missing:true, items:[
+    { id:'maja-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
+    { id:'maja-juice', qty:1, name:'Nudi Juice 200ml - Tropical', special:'', service:'recess' },
+  ]},
+  { id:'prep-pending', name:'Kitchen prep (pending)', parent:'', pickup:'—', missing:true, items:[
+    { id:'prep-lettuce', qty:1, name:'Lettuce', special:'Pending', service:'lunch' },
+  ]},
+  { id:'tommy-emma', name:'Tommy & Emma', parent:'', pickup:'—', missing:true, items:[
+    { id:'tommy-emma-muffin', qty:1, name:'Canteen WholeMeal Spelt Muffin - Blueberry', special:'Confirm who gets which', service:'recess' },
+    { id:'tommy-emma-carrot', qty:1, name:'Carrot cake', special:'Confirm who gets which', service:'recess' },
+  ]},
+];
+let view = 'prep-recess';
+let searchQuery = '';
+let statusFilter = 'all';
+let done = loadDone();
+let observations = loadObs();
+function loadDone(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch { return {}; } }
+function saveDone(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(done)); }
+const OBS_KEY = STORAGE_KEY + '-observations';
+function loadObs(){ try { return JSON.parse(localStorage.getItem(OBS_KEY)||'{}'); } catch { return {}; } }
+function saveObs(){ localStorage.setItem(OBS_KEY, JSON.stringify(observations)); }
+function isPrepView(){ return view.startsWith('prep-'); }
+function serviceOfView(){ return view.endsWith('recess') ? 'recess' : 'lunch'; }
+function prepKey(svc, name){ return 'prep:' + svc + ':' + name; }
+function itemsForService(svc){
+  const out=[];
+  for (const p of PEOPLE){
+    const items=p.items.filter(i=>i.service===svc);
+    if(items.length) out.push({...p, items});
+  }
+  out.sort((a,b)=>a.name.localeCompare(b.name));
+  return out;
+}
+function aggregatePrep(svc){
+  const map = new Map();
+  for (const p of PEOPLE){
+    for (const i of p.items){
+      if (i.service !== svc) continue;
+      const prev = map.get(i.name) || 0;
+      map.set(i.name, prev + i.qty);
+    }
+  }
+  return [...map.entries()]
+    .map(([name, qty]) => ({ id: prepKey(svc, name), name, qty }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function render(){
+  const list=document.getElementById('list');
+  document.body.classList.toggle('mode-prep', isPrepView());
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
+
+  if (isPrepView()) {
+    const svc = serviceOfView();
+    let rows = aggregatePrep(svc);
+    let svcTotal = 0, svcChecked = 0;
+    for (const r of rows) { svcTotal += r.qty; if (done[r.id]) svcChecked += r.qty; }
+    document.getElementById('progText').textContent = `${svcChecked} / ${svcTotal} prepped`;
+    document.getElementById('leftText').textContent = svcTotal ? `${svcTotal - svcChecked} left` : '';
+    document.getElementById('progBar').style.width = svcTotal ? `${(svcChecked/svcTotal)*100}%` : '0%';
+
+    if (statusFilter === 'incomplete') rows = rows.filter(r => !done[r.id]);
+    else if (statusFilter === 'complete') rows = rows.filter(r => !!done[r.id]);
+
+    if (!rows.length) {
+      list.innerHTML = `<div class="no-match">${statusFilter==='complete'?'Nothing marked prepped yet':statusFilter==='incomplete'?'All prep items done':'Nothing to prep'}</div>`;
+      return;
+    }
+    list.innerHTML = rows.map(r => {
+      const isDone = !!done[r.id];
+      return `<label class="prep-row ${isDone?'done':''}">
+        <span class="prep-qty">${r.qty}</span>
+        <span class="prep-name">${escapeHtml(r.name)}</span>
+        <input type="checkbox" data-id="${escapeHtml(r.id)}" ${isDone?'checked':''}/>
+      </label>`;
+    }).join('');
+    return;
+  }
+
+  const service = serviceOfView();
+  let groups=itemsForService(service);
+  const q = searchQuery.trim().toLowerCase();
+  const serviceAll = groups;
+  let svcTotal = 0, svcChecked = 0;
+  for (const g of serviceAll) for (const i of g.items) { svcTotal += i.qty; if (done[i.id]) svcChecked += i.qty; }
+  if (q) {
+    groups = groups.map(g => {
+      const parentHit = (g.parent||'').toLowerCase().includes(q);
+      const nameHit = (g.name||'').toLowerCase().includes(q);
+      const items = g.items.filter(i =>
+        parentHit || nameHit ||
+        (i.name||'').toLowerCase().includes(q) ||
+        (i.special||'').toLowerCase().includes(q) ||
+        (i.child||'').toLowerCase().includes(q)
+      );
+      if (parentHit || nameHit) return { ...g, items: g.items };
+      return { ...g, items };
+    }).filter(g => g.items.length);
+  }
+  if (statusFilter === 'incomplete') {
+    groups = groups.map(g => ({
+      ...g,
+      items: g.items.filter(i => !done[i.id])
+    })).filter(g => g.items.length);
+  } else if (statusFilter === 'complete') {
+    groups = groups.map(g => ({
+      ...g,
+      items: g.items.filter(i => !!done[i.id])
+    })).filter(g => g.items.length);
+  }
+  document.getElementById('progText').textContent=`${svcChecked} / ${svcTotal} handed out`;
+  document.getElementById('leftText').textContent=svcTotal?`${svcTotal-svcChecked} left`:'';
+  document.getElementById('progBar').style.width=svcTotal?`${(svcChecked/svcTotal)*100}%`:'0%';
+  if (!groups.length) {
+    let emptyMsg = 'Nothing in this service';
+    if (q && statusFilter !== 'all') emptyMsg = `No ${statusFilter} matches for “${escapeHtml(searchQuery.trim())}”`;
+    else if (q) emptyMsg = `No matches for “${escapeHtml(searchQuery.trim())}”`;
+    else if (statusFilter === 'incomplete') emptyMsg = 'All items in this service are complete';
+    else if (statusFilter === 'complete') emptyMsg = 'No completed items in this service yet';
+    list.innerHTML = `<div class="no-match">${emptyMsg}</div>`;
+    return;
+  }
+  list.innerHTML=groups.map(g=>{
+    const allDone=g.items.every(i=>done[i.id]);
+    const meta=[g.parent?`Parent: ${g.parent}`:null, g.pickup?`Pickup ${g.pickup}`:null].filter(Boolean).join(' · ');
+    const badge=g.missing?'<span class="badge">WAS MISSING</span>':'';
+    const rows=g.items.map(i=>{
+      const isDone=!!done[i.id];
+      const childTag = i.child ? `<span class="child-tag">${escapeHtml(i.child)}</span>` : '';
+      return `<label class="item ${isDone?'done':''}"><input type="checkbox" data-id="${i.id}" ${isDone?'checked':''}/><span class="label"><span class="qty">${i.qty}×</span>${childTag}${escapeHtml(i.name)}${i.special?`<span class="special">${escapeHtml(i.special)}</span>`:''}</span></label>`;
+    }).join('');
+        const obsVal = observations[g.id] || '';
+    const obsClass = obsVal.trim() ? 'has-text' : '';
+    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${g.id}">
+      <div class="child-head"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
+      ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>
+      ${rows}
+      <div class="obs-wrap">
+        <label for="obs-${g.id}">Observations</label>
+        <textarea id="obs-${g.id}" class="${obsClass}" data-person="${g.id}" placeholder="Notes for this order…">${escapeHtml(obsVal)}</textarea>
+      </div>
+    </section>`;
+  }).join('');
+}
+document.getElementById('list').addEventListener('change',e=>{
+  const t=e.target; if(!t.matches('input[type=checkbox][data-id]')) return;
+  if(t.checked) done[t.dataset.id]=true; else delete done[t.dataset.id];
+  saveDone(); render();
+});
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{ view=btn.dataset.view; render(); }));
+document.getElementById('btnResetService').addEventListener('click',()=>{
+  if(!confirm(isPrepView() ? 'Clear prep ticks for this tab?' : 'Clear handout ticks for this service?')) return;
+  const svc = serviceOfView();
+  if (isPrepView()) {
+    for (const r of aggregatePrep(svc)) delete done[r.id];
+  } else {
+    for (const g of itemsForService(svc)) for (const i of g.items) delete done[i.id];
+  }
+  saveDone(); render();
+});
+document.getElementById('btnResetAll').addEventListener('click',()=>{
+  if(!confirm('Clear ALL ticks?')) return; done={}; saveDone(); render();
+});
+
+document.getElementById('search').addEventListener('input', (e) => {
+  searchQuery = e.target.value || '';
+  render();
+});
+document.querySelectorAll('.filter-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    statusFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
+});
+
+document.getElementById('list').addEventListener('input', (e) => {
+  const t = e.target;
+  if (!t.matches('textarea[data-person]')) return;
+  const id = t.dataset.person;
+  const val = t.value;
+  if (val.trim()) { observations[id] = val; t.classList.add('has-text'); }
+  else { delete observations[id]; t.classList.remove('has-text'); }
+  saveObs();
+});
+
+function formatReportDate(d) {
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+function entriesWithObs() {
+  return PEOPLE
+    .map(p => ({ p, note: (observations[p.id] || '').trim() }))
+    .filter(x => x.note)
+    .sort((a, b) => a.p.name.localeCompare(b.p.name));
+}
+function buildReportText() {
+  const lines = [];
+  const now = new Date();
+  lines.push('Observations — ' + formatReportDate(now));
+  lines.push('Generated: ' + now.toLocaleString('en-AU'));
+  lines.push('');
+  const rows = entriesWithObs();
+  if (!rows.length) {
+    lines.push('(No observations entered yet.)');
+  } else {
+    for (const { p, note } of rows) {
+      const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+      lines.push(p.name);
+      if (meta) lines.push(meta);
+      lines.push(note);
+      lines.push('');
+    }
+  }
+  return lines.join('\n').trim() + '\n';
+}
+function openReport() {
+  const now = new Date();
+  document.getElementById('reportDate').textContent = formatReportDate(now);
+  const box = document.getElementById('reportEntries');
+  const rows = entriesWithObs();
+  if (!rows.length) {
+    box.innerHTML = '<div class="report-empty">No observations yet.<br/>Add notes under each order, then come back here.</div>';
+  } else {
+    box.innerHTML = rows.map(({ p, note }) => {
+      const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+      return `<article class="obs-entry">
+        <div class="who">${escapeHtml(p.name)}${p.missing ? ' <span class="badge">WAS MISSING</span>' : ''}</div>
+        ${meta ? `<div class="who-meta">${escapeHtml(meta)}</div>` : ''}
+        <div class="note">${escapeHtml(note)}</div>
+      </article>`;
+    }).join('');
+  }
+  document.body.classList.add('view-report');
+  window.scrollTo(0, 0);
+}
+function closeReport() {
+  document.body.classList.remove('view-report');
+  }
+document.getElementById('btnReport').addEventListener('click', openReport);
+document.getElementById('btnBackTick').addEventListener('click', closeReport);
+document.getElementById('btnCopyReport').addEventListener('click', async () => {
+  const text = buildReportText();
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('Report copied');
+  } catch {
+    prompt('Copy report:', text);
+  }
+});
+document.getElementById('btnDownloadReport').addEventListener('click', () => {
+  const text = buildReportText();
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'canteen-observations-2026-09-17.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+
+
+render();
+</script>
+</body>
+</html>
