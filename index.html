@@ -179,11 +179,42 @@
   .tab { font-size: 0.82rem; }
   .chrome-handout .search-wrap,
   .chrome-handout .filters,
-  .chrome-handout #btnReport { display: block; }
+  .chrome-handout #btnReport,
   body.mode-prep .search-wrap,
   body.mode-prep #btnReport { display: none; }
 
 
+
+
+  .child-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+  .child-head-text { flex: 1; min-width: 140px; }
+  .btn-docket {
+    border: 1px solid var(--accent); background: #ecfdf5; color: var(--accent);
+    border-radius: 999px; padding: 6px 12px; font-size: 0.75rem; font-weight: 800;
+    white-space: nowrap; cursor: pointer;
+  }
+  .btn-docket:active { background: #d1fae5; }
+  #docketLightbox {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.72); padding: 16px; overflow: auto;
+    align-items: flex-start; justify-content: center;
+  }
+  #docketLightbox.open { display: flex; }
+  #docketLightbox .lb-inner {
+    position: relative; background: #fff; border-radius: 14px;
+    padding: 14px; max-width: 720px; width: 100%; margin: auto;
+  }
+  #docketLightbox .lb-close {
+    position: absolute; top: 8px; right: 8px; width: 36px; height: 36px;
+    border: none; border-radius: 999px; background: #e7e5e4; font-size: 1.2rem;
+    font-weight: 800; cursor: pointer; line-height: 1;
+  }
+  #docketLightbox .lb-title { font-weight: 800; margin: 0 40px 10px 0; font-size: 1rem; }
+  #docketLightbox .lb-imgs { display: flex; flex-direction: column; gap: 12px; }
+  #docketLightbox img {
+    width: 100%; height: auto; border-radius: 10px; display: block;
+    background: #f5f5f4;
+  }
 
   footer { text-align: center; color: var(--muted); font-size: 0.7rem; margin-top: 16px; }
 </style>
@@ -232,58 +263,58 @@
 
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v17';
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-17-v18';
 const PEOPLE = [
-  { id:'karin', name:'Abigail & Mario', parent:'Karin G', pickup:'12:15', missing:false, items:[
+  { id:'karin', dockets:['dockets/karin.jpg'], name:'Abigail & Mario', parent:'Karin G', pickup:'12:15', missing:false, items:[
     { id:'abigail-p-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
     { id:'abigail-p-apple', qty:1, name:'Apple', special:'From Lunch Bag 2', service:'lunch', child:'Abigail' },
     { id:'mario-p-lb1', qty:1, name:'Lunch Bag 1 (Sandwich+apple)', special:'no hummus; Banana', service:'lunch', child:'Mario' },
     { id:'mario-nudi-apple', qty:1, name:'Canteen Nudi Juice 200ml - Apple', special:'', service:'recess', child:'Mario' },
   ]},
-  { id:'amanda', name:'Clara & Ben', parent:'Amanda T', pickup:'11:00', missing:false, items:[
+  { id:'amanda', dockets:['dockets/amanda.jpg'], name:'Clara & Ben', parent:'Amanda T', pickup:'11:00', missing:false, items:[
     { id:'clara-nacho', qty:1, name:'Nacho Bowl', special:'Dish up early / not too hot', service:'lunch', child:'Clara' },
     { id:'ben-nacho', qty:1, name:'Nacho Bowl', special:'Dish up well in advance so it’s not so hot', service:'lunch', child:'Ben' },
   ]},
-  { id:'andrea', name:'Mrs Thompson', parent:'Andrea T', pickup:'1:00pm', missing:false, items:[
+  { id:'andrea', dockets:['dockets/andrea.jpg'], name:'Mrs Thompson', parent:'Andrea T', pickup:'1:00pm', missing:false, items:[
     { id:'thompson-pie', qty:1, name:'Pies - Creamy Mushroom', special:'Toronto Adventist School', service:'lunch' },
   ]},
-  { id:'angela', name:'Siena & Francesca', parent:'Angela M', pickup:'11:00', missing:false, items:[
+  { id:'angela', dockets:['dockets/angela.jpg'], name:'Siena & Francesca', parent:'Angela M', pickup:'11:00', missing:false, items:[
     { id:'siena-toastie', qty:1, name:'Hemp Cheese & Tomato Toastie', special:'', service:'lunch', child:'Siena' },
     { id:'siena-pie', qty:1, name:'Pies - Creamy Mushroom', special:'', service:'lunch', child:'Siena' },
     { id:'fran-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch', child:'Francesca' },
     { id:'fran-bread', qty:1, name:'Canteen GF Banana Bread', special:'', service:'recess', child:'Francesca' },
   ]},
-  { id:'musk-kids', name:'Ruthie & Abigail Musk', parent:'Asmitra M', pickup:'Asmitra order', missing:false, items:[
+  { id:'musk-kids', dockets:['dockets/musk-kids.jpg'], name:'Ruthie & Abigail Musk', parent:'Asmitra M', pickup:'Asmitra order', missing:false, items:[
     { id:'musk-loco', qty:1, name:'Loco Love - Chewy Caramel', special:'Confirm which child', service:'recess' },
     { id:'musk-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'Confirm which child', service:'lunch' },
   ]},
-  { id:'hannah-deves', name:'Hannah Deves', parent:'Alexis D', pickup:'10:30 · Toronto', missing:false, items:[
+  { id:'hannah-deves', dockets:['dockets/hannah-deves.jpg'], name:'Hannah Deves', parent:'Alexis D', pickup:'10:30 · Toronto', missing:false, items:[
     { id:'hd-loco', qty:1, name:'Loco Love - Double Chocolate', special:'', service:'recess' },
     { id:'hd-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
   ]},
-  { id:'isabella', name:'Isabella Wallace', parent:'', pickup:'SP-37', missing:false, items:[
+  { id:'isabella', dockets:['dockets/isabella.jpg'], name:'Isabella Wallace', parent:'', pickup:'SP-37', missing:false, items:[
     { id:'isa-loco', qty:1, name:'Loco Love - Double Chocolate', special:'', service:'recess' },
     { id:'isa-juice', qty:1, name:'Nudi Juice 200ml - Orange', special:'', service:'recess' },
     { id:'isa-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
   ]},
-  { id:'jaedeok', name:'Jaedeok Y', parent:'', pickup:'10:00', missing:false, items:[
+  { id:'jaedeok', dockets:['dockets/jaedeok.jpg'], name:'Jaedeok Y', parent:'', pickup:'10:00', missing:false, items:[
     { id:'jae-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
   ]},
-  { id:'krystal', name:'Jada', parent:'Krystal', pickup:'11:00', missing:false, items:[
+  { id:'krystal', dockets:['dockets/krystal.jpg'], name:'Jada', parent:'Krystal', pickup:'11:00', missing:false, items:[
     { id:'kry-acai', qty:1, name:'Acai Cup', special:'', service:'recess' },
     { id:'kry-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'', service:'lunch' },
   ]},
-  { id:'letitia', name:'Letitia C', parent:'', pickup:'11:00', missing:false, items:[
+  { id:'letitia', dockets:['dockets/letitia.jpg'], name:'Letitia C', parent:'', pickup:'11:00', missing:false, items:[
     { id:'let-fruit', qty:1, name:'Fruit Salad', special:'', service:'recess' },
     { id:'let-cookie', qty:1, name:'GF Buckwheat Choc Chip Cookie', special:'', service:'recess' },
     { id:'let-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
     { id:'let-toastie', qty:1, name:'Refried Beans Toastie', special:'', service:'lunch' },
     { id:'let-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
   ]},
-  { id:'oscar', name:'Oscar Roki', parent:'Luke R', pickup:'11:00', missing:false, items:[
+  { id:'oscar', dockets:['dockets/oscar.jpg'], name:'Oscar Roki', parent:'Luke R', pickup:'11:00', missing:false, items:[
     { id:'oscar-acai', qty:1, name:'Acai Cup', special:'', service:'recess' },
   ]},
-  { id:'staffords', name:'Hannah & Koen', parent:'Staffords', pickup:'SP-36', missing:false, items:[
+  { id:'staffords', dockets:['dockets/staffords.jpg'], name:'Hannah & Koen', parent:'Staffords', pickup:'SP-36', missing:false, items:[
     { id:'hs-milk', qty:1, name:'Milks (Coconut NSA) - Vanilla', special:'', service:'recess', child:'Hannah' },
     { id:'hs-parfait', qty:1, name:'Parfait Love Cup', special:'', service:'recess', child:'Hannah' },
     { id:'hs-tempeh', qty:1, name:'Tempeh Chips - Sea Weed', special:'', service:'recess', child:'Hannah' },
@@ -292,26 +323,26 @@ const PEOPLE = [
     { id:'koen-loco', qty:1, name:'Loco Love - Hazelnut Butter Praline', special:'', service:'recess', child:'Koen' },
     { id:'koen-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch', child:'Koen' },
   ]},
-  { id:'karina', name:'Chloe & Mathias', parent:'Karina M', pickup:'10:00', missing:true, items:[
+  { id:'karina', dockets:['dockets/karina.jpg'], name:'Chloe & Mathias', parent:'Karina M', pickup:'10:00', missing:true, items:[
     { id:'karina-bread', qty:2, name:'Canteen GF Banana Bread', special:'', service:'recess' },
     { id:'karina-sausage', qty:1, name:'Sausage Roll', special:'', service:'lunch' },
   ]},
-  { id:'olivia', name:'Zahila & Zamira', parent:'Olivia P', pickup:'9:00', missing:true, items:[
+  { id:'olivia', dockets:['dockets/olivia.jpg'], name:'Zahila & Zamira', parent:'Olivia P', pickup:'9:00', missing:true, items:[
     { id:'olivia-bread', qty:1, name:'Canteen GF Banana Bread', special:'', service:'recess' },
     { id:'olivia-cookie', qty:1, name:'GF Buckwheat Choc Chip Cookie', special:'', service:'recess' },
     { id:'olivia-nacho', qty:2, name:'Nacho Bowl', special:'', service:'lunch' },
   ]},
-  { id:'melissa', name:'Grace & Eloise', parent:'Melissa W', pickup:'10:00', missing:true, items:[
+  { id:'melissa', dockets:['dockets/melissa.jpg'], name:'Grace & Eloise', parent:'Melissa W', pickup:'10:00', missing:true, items:[
     { id:'mel-blueberry', qty:1, name:'Canteen GF Banana Blueberry Bread', special:'', service:'recess' },
     { id:'mel-loco', qty:1, name:'Loco Love - Chewy Caramel', special:'', service:'recess' },
     { id:'mel-nacho', qty:1, name:'Nacho Bowl', special:'Please add yoghurt', service:'lunch' },
     { id:'mel-pasta', qty:1, name:'Pasta & Napolitana - Whole Wheat', special:'', service:'lunch' },
   ]},
-  { id:'ximena', name:'Tahlia', parent:'Ximena G', pickup:'11:00', missing:true, items:[
+  { id:'ximena', dockets:['dockets/ximena.jpg'], name:'Tahlia', parent:'Ximena G', pickup:'11:00', missing:true, items:[
     { id:'ximena-pesto', qty:1, name:'Pesto Pasta Salad', special:'From Lunch Bag 2', service:'lunch' },
     { id:'ximena-apple', qty:1, name:'Apple', special:'From Lunch Bag 2', service:'lunch' },
   ]},
-  { id:'maja', name:'Maja Rees (Kindy)', parent:'Joel R', pickup:'today', missing:true, items:[
+  { id:'maja', dockets:['dockets/maja.jpg'], name:'Maja Rees (Kindy)', parent:'Joel R', pickup:'today', missing:true, items:[
     { id:'maja-nacho', qty:1, name:'Nacho Bowl', special:'', service:'lunch' },
     { id:'maja-juice', qty:1, name:'Nudi Juice 200ml - Tropical', special:'', service:'recess' },
   ]},
@@ -445,9 +476,13 @@ function render(){
     }).join('');
         const obsVal = observations[g.id] || '';
     const obsClass = obsVal.trim() ? 'has-text' : '';
+    const dockets = (g.dockets && g.dockets.length) ? g.dockets : [];
+    const docketBtn = dockets.length
+      ? `<button type="button" class="btn-docket" data-dockets="${escapeHtml(JSON.stringify(dockets))}" data-docket-name="${escapeHtml(g.name)}">View docket</button>`
+      : '';
     return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${g.id}">
-      <div class="child-head"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
-      ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>
+      <div class="child-head"><div class="child-head-text"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
+      ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>${docketBtn}</div>
       ${rows}
       <div class="obs-wrap">
         <label for="obs-${g.id}">Observations</label>
@@ -560,7 +595,48 @@ document.getElementById('btnDownloadReport').addEventListener('click', () => {
 
 
 
+
+function openDocketLightbox(paths, title) {
+  const box = document.getElementById('docketLightbox');
+  const imgs = document.getElementById('lbImgs');
+  document.getElementById('lbTitle').textContent = title ? ('Docket · ' + title) : 'Docket';
+  imgs.innerHTML = (paths||[]).map(src => `<img src="${escapeHtml(src)}" alt="Canteen docket"/>`).join('');
+  box.classList.add('open');
+  box.setAttribute('aria-hidden', 'false');
+}
+function closeDocketLightbox() {
+  const box = document.getElementById('docketLightbox');
+  box.classList.remove('open');
+  box.setAttribute('aria-hidden', 'true');
+  document.getElementById('lbImgs').innerHTML = '';
+}
+document.getElementById('list').addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn-docket');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  let paths = [];
+  try { paths = JSON.parse(btn.dataset.dockets || '[]'); } catch {}
+  openDocketLightbox(paths, btn.dataset.docketName || '');
+});
+document.getElementById('lbClose').addEventListener('click', closeDocketLightbox);
+document.getElementById('docketLightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'docketLightbox') closeDocketLightbox();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeDocketLightbox();
+});
+
 render();
 </script>
+
+<div id="docketLightbox" aria-hidden="true">
+  <div class="lb-inner" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button>
+    <div class="lb-title" id="lbTitle">Docket</div>
+    <div class="lb-imgs" id="lbImgs"></div>
+  </div>
+</div>
+
 </body>
 </html>
