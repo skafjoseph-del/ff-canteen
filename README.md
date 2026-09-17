@@ -2,6 +2,8 @@
 
 Phone-friendly prep + handout checklist for school canteen day.
 
+The app is blank until the next canteen day is loaded.
+
 **Live app:** https://skafjoseph-del.github.io/ff-canteen/
 
 ## Tabs
