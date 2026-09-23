@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Canteen Tick"/>
-<title>FF Canteen Tick · Ready</title>
+<title>FF Canteen Tick · 24 Sep 2026</title>
 <style>
   :root {
     --bg: #f4f1ea; --card: #fff; --ink: #1c1917; --muted: #78716c;
@@ -223,7 +223,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Previous canteen day cleared · ready for next orders · tap to tick off</div>
+  <div class="sub">Thu 24 Sep 2026 · 10 orders · tap to tick off</div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -246,7 +246,7 @@
   <button type="button" id="btnReport">Generate observation report</button>
 </header>
 <main id="list"></main>
-<footer class="tick-footer">Food Farmacy canteen · ticks save on this phone · blank until next canteen day is loaded</footer>
+<footer class="tick-footer">Food Farmacy canteen · Thu 24 Sep 2026 · ticks save on this phone</footer>
 
 <section id="reportPage" aria-label="Observations report">
   <div class="report-top">
@@ -272,8 +272,57 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-wiped-2026-09-18-v1';
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-24-v1';
 const PEOPLE = [
+  { id:'25727755', name:'Olivia Patrick', parent:'Olivia Patrick', pickup:'9:00', items:[
+    { id:'25727755-acai-cup-0', qty:1, name:'Acai Cup', service:'lunch' },
+    { id:'25727755-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie', service:'lunch' },
+    { id:'25727755-refried-beans-toastie-2', qty:2, name:'Refried Beans Toastie', service:'lunch' },
+  ]},
+  { id:'25725608', name:'Karina Mora', parent:'Karina Mora', pickup:'10:00', items:[
+    { id:'25725608-gf-banana-bread-0', qty:2, name:'GF Banana Bread', service:'lunch' },
+    { id:'25725608-sausage-roll-1', qty:1, name:'Sausage Roll', service:'lunch' },
+  ]},
+  { id:'25725998', name:'Krystal Mills', parent:'Krystal Mills', pickup:'10:15', items:[
+    { id:'25725998-loco-love-hazelnut-butter-praline-0', qty:1, name:'Loco Love (Hazelnut Butter Praline)', service:'lunch' },
+    { id:'25725998-nacho-bowl-1', qty:1, name:'Nacho Bowl', service:'lunch' },
+  ]},
+  { id:'25726063', name:'Hannah Deves', parent:'Alexis Deves', pickup:'10:30 · Toronto', items:[
+    { id:'25726063-loco-love-double-chocolate-0', qty:1, name:'Loco Love (Double Chocolate)', service:'lunch' },
+    { id:'25726063-sausage-roll-1', qty:1, name:'Sausage Roll', service:'lunch' },
+  ]},
+  { id:'25725689', name:'Adam Kavanagh', parent:'Adam Kavanagh', pickup:'11:00', items:[
+    { id:'25725689-gf-banana-bread-0', qty:2, name:'GF Banana Bread', service:'recess' },
+    { id:'25725689-nacho-bowl-1', qty:2, name:'Nacho Bowl', service:'lunch' },
+  ]},
+  { id:'25726035', name:'Hannah & Koen', parent:'Bronwyn Stafford', pickup:'11:00', items:[
+    { id:'25726035-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'lunch', child:'Koen' },
+    { id:'25726035-loco-love-hazelnut-butter-praline-1', qty:1, name:'Loco Love (Hazelnut Butter Praline)', service:'lunch', child:'Koen' },
+    { id:'25726035-nudi-juice-200ml-orange-2', qty:1, name:'Nudi Juice 200ml (Orange)', service:'lunch', child:'Koen' },
+    { id:'25726035-parfaits-3', qty:1, name:'Parfaits', service:'lunch', child:'Hannah' },
+    { id:'25726035-pies-creamy-mushroom-4', qty:2, name:'Pies (Creamy Mushroom)', service:'lunch', child:'Hannah' },
+    { id:'25726035-sausage-roll-5', qty:1, name:'Sausage Roll', service:'lunch', child:'Koen' },
+    { id:'25726035-tempeh-chips-sea-salt-6', qty:1, name:'Tempeh Chips (Sea Salt)', service:'lunch', child:'Hannah' },
+  ]},
+  { id:'25727007', name:'Oscar Roki', parent:'Luke Roki', pickup:'11:00', items:[
+    { id:'25727007-loco-love-strawberry-0', qty:1, name:'Loco Love (Strawberry)', service:'lunch' },
+  ]},
+  { id:'25732038', name:'Ariana & Emilia', parent:'Natasha Curnow', pickup:'11:00', items:[
+    { id:'25732038-acai-cup-0', qty:1, name:'Acai Cup', service:'recess', child:'Ariana' },
+    { id:'25732038-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie', service:'recess', child:'Emilia' },
+    { id:'25732038-loco-love-chewy-caramel-2', qty:1, name:'Loco Love (Chewy Caramel)', service:'lunch', child:'Emilia' },
+    { id:'25732038-pasta-napolitana-sauce-whole-wheat-3', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch', child:'Ariana' },
+  ]},
+  { id:'25712569', name:'Abigail & Mario', parent:'Karin Gonzalez', pickup:'12:30', items:[
+    { id:'25712569-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'lunch', child:'Mario' },
+    { id:'25712569-gf-oats-and-raisin-cookie-1', qty:1, name:'GF Oats and Raisin Cookie', service:'lunch', child:'Abigail' },
+    { id:'25712569-pasta-napolitana-sauce-whole-wheat-2', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch', special:'no sauce please', child:'Mario' },
+    { id:'25712569-refried-beans-toastie-3', qty:1, name:'Refried Beans Toastie', service:'lunch', child:'Abigail' },
+  ]},
+  { id:'25722794', name:'Freyja', parent:'Freyja Macbeth', pickup:'1:00pm', items:[
+    { id:'25722794-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'lunch' },
+    { id:'25722794-pasta-napolitana-sauce-whole-wheat-1', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch' },
+  ]},
 ];
 let view = 'prep-recess';
 let searchQuery = '';
@@ -509,7 +558,7 @@ document.getElementById('btnDownloadReport').addEventListener('click', () => {
   const blob = new Blob([text], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'canteen-observations-2026-09-17.txt';
+  a.download = 'canteen-observations-2026-09-24.txt';
   a.click();
   URL.revokeObjectURL(a.href);
 });

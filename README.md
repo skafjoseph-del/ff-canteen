@@ -2,7 +2,7 @@
 
 Phone-friendly prep + handout checklist for school canteen day.
 
-The app is blank until the next canteen day is loaded.
+Loaded for Thursday 24 Sep 2026 (10 canteen orders).
 
 **Live app:** https://skafjoseph-del.github.io/ff-canteen/
 
