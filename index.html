@@ -190,10 +190,40 @@
   .child-head-text { flex: 1; min-width: 140px; }
   .btn-docket {
     border: 1px solid var(--accent); background: #ecfdf5; color: var(--accent);
-    border-radius: 999px; padding: 6px 12px; font-size: 0.75rem; font-weight: 800;
-    white-space: nowrap; cursor: pointer;
+    border-radius: 999px; padding: 8px 12px; font-size: 0.75rem; font-weight: 800;
+    white-space: nowrap; cursor: pointer; min-height: 36px;
+    touch-action: manipulation;
   }
   .btn-docket:active { background: #d1fae5; }
+  .docket-actions {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    justify-content: flex-end;
+  }
+  .btn-add-photo {
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--accent); background: var(--card); color: var(--accent);
+    border-radius: 999px; padding: 8px 12px; font-size: 0.75rem; font-weight: 800;
+    white-space: nowrap; cursor: pointer; min-height: 36px;
+    touch-action: manipulation;
+  }
+  .btn-add-photo:active { background: #d1fae5; }
+  .btn-add-photo input {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; opacity: 0; cursor: pointer; font-size: 16px;
+  }
+  .docket-badge {
+    display: inline-flex; align-items: center;
+    font-size: 0.65rem; font-weight: 800;
+    background: #ecfdf5; color: var(--accent);
+    border: 1px solid #99f6e4;
+    padding: 4px 8px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  @media (max-width: 420px) {
+    .docket-actions { width: 100%; justify-content: flex-start; }
+    .btn-add-photo, .btn-docket { min-height: 44px; padding: 10px 14px; }
+  }
   #docketLightbox {
     display: none; position: fixed; inset: 0; z-index: 100;
     background: rgba(0,0,0,.72); padding: 16px; overflow: auto;
@@ -216,6 +246,24 @@
     width: 100%; height: auto; border-radius: 10px; display: block;
     background: #f5f5f4;
   }
+  #docketLightbox .lb-note { margin: 8px 0 0; color: var(--muted); font-size: 0.9rem; }
+  #docketLightbox .lb-shot { display: flex; flex-direction: column; gap: 8px; }
+  #docketLightbox .lb-cap {
+    font-size: 0.72rem; font-weight: 800; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  #docketLightbox .lb-remove,
+  #docketLightbox .lb-clear {
+    min-height: 44px; border-radius: 10px; font-weight: 800;
+    font-size: 0.9rem; cursor: pointer; touch-action: manipulation;
+  }
+  #docketLightbox .lb-remove {
+    border: 1px solid #fdba74; background: #fff7ed; color: var(--warn);
+  }
+  #docketLightbox .lb-clear {
+    width: 100%; border: none; background: var(--warn); color: #fff;
+  }
+  #docketLightbox .lb-actions { margin-top: 12px; }
 
   footer { text-align: center; color: var(--muted); font-size: 0.7rem; margin-top: 16px; }
 </style>
@@ -223,7 +271,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Previous canteen day cleared · ready for next orders · tap to tick off</div>
+  <div class="sub">Previous canteen day cleared · ready for next orders · tap to tick off · docket photos stay on this phone</div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -246,7 +294,7 @@
   <button type="button" id="btnReport">Generate observation report</button>
 </header>
 <main id="list"></main>
-<footer class="tick-footer">Food Farmacy canteen · ticks save on this phone · blank until next canteen day is loaded</footer>
+<footer class="tick-footer">Food Farmacy canteen · ticks and docket photos stay on this phone · blank until next canteen day is loaded</footer>
 
 <section id="reportPage" aria-label="Observations report">
   <div class="report-top">
@@ -268,6 +316,7 @@
     <button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button>
     <div class="lb-title" id="lbTitle">Docket</div>
     <div class="lb-imgs" id="lbImgs"></div>
+    <div class="lb-actions" id="lbActions"></div>
   </div>
 </div>
 
@@ -285,6 +334,140 @@ function saveDone(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(done)); }
 const OBS_KEY = STORAGE_KEY + '-observations';
 function loadObs(){ try { return JSON.parse(localStorage.getItem(OBS_KEY)||'{}'); } catch { return {}; } }
 function saveObs(){ localStorage.setItem(OBS_KEY, JSON.stringify(observations)); }
+
+// Photos are blobs in IndexedDB, never localStorage. The database name follows
+// STORAGE_KEY so the next canteen-day wipe starts empty without clearing ticks.
+const DOCKET_DB_NAME = 'ff-canteen-dockets-' + STORAGE_KEY;
+const DOCKET_STORE = 'photos';
+let docketDbPromise = null;
+let docketCounts = Object.create(null);
+let docketCountGen = 0;
+let lbObjectUrls = [];
+let lbPersonId = null;
+
+function openDocketDb() {
+  if (docketDbPromise) return docketDbPromise;
+  docketDbPromise = new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      docketDbPromise = null;
+      reject(new Error('IndexedDB unavailable'));
+      return;
+    }
+    const req = indexedDB.open(DOCKET_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DOCKET_STORE)) {
+        const store = db.createObjectStore(DOCKET_STORE, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('byPerson', 'personId', { unique: false });
+      }
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => { db.close(); docketDbPromise = null; };
+      db.onclose = () => { docketDbPromise = null; };
+      resolve(db);
+    };
+    req.onerror = () => { docketDbPromise = null; reject(req.error); };
+    req.onblocked = () => { docketDbPromise = null; reject(new Error('IndexedDB blocked')); };
+  });
+  return docketDbPromise;
+}
+function isImageFile(file) {
+  if (!file || !file.size) return false;
+  if (file.type && file.type.startsWith('image/')) return true;
+  return /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name || '');
+}
+async function refreshDocketCounts() {
+  const gen = ++docketCountGen;
+  const db = await openDocketDb();
+  const keys = await new Promise((resolve, reject) => {
+    const tx = db.transaction(DOCKET_STORE, 'readonly');
+    const req = tx.objectStore(DOCKET_STORE).index('byPerson').getAllKeys();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+  if (gen !== docketCountGen) return;
+  const next = Object.create(null);
+  for (const personId of keys) next[personId] = (next[personId] || 0) + 1;
+  docketCounts = next;
+}
+async function photosForPerson(personId) {
+  const db = await openDocketDb();
+  const key = String(personId);
+  const rows = await new Promise((resolve, reject) => {
+    const tx = db.transaction(DOCKET_STORE, 'readonly');
+    const req = tx.objectStore(DOCKET_STORE).index('byPerson').getAll(key);
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+  return rows
+    .filter(r => r && r.blob && (!r.appKey || r.appKey === STORAGE_KEY))
+    .sort((a, b) => (a.created - b.created) || (a.id - b.id));
+}
+async function addDocketPhotos(personId, files) {
+  const images = [...files].filter(isImageFile);
+  if (!images.length) return 0;
+  const db = await openDocketDb();
+  const key = String(personId);
+  const t0 = Date.now();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(DOCKET_STORE, 'readwrite');
+    const store = tx.objectStore(DOCKET_STORE);
+    images.forEach((file, i) => {
+      store.add({
+        personId: key,
+        blob: file.slice(0, file.size, file.type || ''),
+        created: t0 + i,
+        appKey: STORAGE_KEY,
+        name: file.name || ''
+      });
+    });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('aborted'));
+  });
+  await refreshDocketCounts();
+  return images.length;
+}
+async function deleteDocketPhoto(photoId) {
+  const db = await openDocketDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(DOCKET_STORE, 'readwrite');
+    tx.objectStore(DOCKET_STORE).delete(photoId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('aborted'));
+  });
+  await refreshDocketCounts();
+}
+async function clearDocketPhotos(personId) {
+  const db = await openDocketDb();
+  const key = String(personId);
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(DOCKET_STORE, 'readwrite');
+    const req = tx.objectStore(DOCKET_STORE).index('byPerson').openCursor(IDBKeyRange.only(key));
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (cursor) { cursor.delete(); cursor.continue(); }
+    };
+    req.onerror = () => reject(req.error);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('aborted'));
+  });
+  await refreshDocketCounts();
+}
+function staticDocketsFor(personId) {
+  const person = PEOPLE.find(p => String(p.id) === String(personId));
+  return (person && person.dockets && person.dockets.length) ? person.dockets : [];
+}
+function revokeLbUrls() {
+  for (const url of lbObjectUrls) {
+    try { URL.revokeObjectURL(url); } catch {}
+  }
+  lbObjectUrls = [];
+}
+
 function isPrepView(){ return view.startsWith('prep-'); }
 function serviceOfView(){ return view.endsWith('recess') ? 'recess' : 'lunch'; }
 function prepKey(svc, name){ return 'prep:' + svc + ':' + name; }
@@ -397,13 +580,21 @@ function render(){
     }).join('');
         const obsVal = observations[g.id] || '';
     const obsClass = obsVal.trim() ? 'has-text' : '';
-    const dockets = (g.dockets && g.dockets.length) ? g.dockets : [];
-    const docketBtn = dockets.length
-      ? `<button type="button" class="btn-docket" data-dockets="${escapeHtml(JSON.stringify(dockets))}" data-docket-name="${escapeHtml(g.name)}">View docket</button>`
+    const staticDockets = (g.dockets && g.dockets.length) ? g.dockets : [];
+    const photoCount = docketCounts[String(g.id)] || 0;
+    const showView = photoCount > 0 || staticDockets.length > 0;
+    const docketBadge = photoCount ? `<span class="docket-badge">Docket · ${photoCount}</span>` : '';
+    const viewLabel = photoCount
+      ? `View docket, ${photoCount} photo${photoCount === 1 ? '' : 's'} on this phone`
+      : 'View docket';
+    const docketBtn = showView
+      ? `<button type="button" class="btn-docket" data-person="${escapeHtml(g.id)}" data-docket-name="${escapeHtml(g.name)}" aria-label="${escapeHtml(viewLabel)}">View docket</button>`
       : '';
-    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${g.id}">
+    // No capture attribute: the phone picker then offers the camera and the gallery.
+    const addPhoto = `<label class="btn-add-photo">Add photo<input type="file" accept="image/*" multiple data-add-photo="${escapeHtml(g.id)}" aria-label="Add docket photo for ${escapeHtml(g.name)}"/></label>`;
+    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${escapeHtml(g.id)}">
       <div class="child-head"><div class="child-head-text"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
-      ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>${docketBtn}</div>
+      ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div><div class="docket-actions">${addPhoto}${docketBtn}${docketBadge}</div></div>
       ${rows}
       <div class="obs-wrap">
         <label for="obs-${g.id}">Observations</label>
@@ -413,7 +604,19 @@ function render(){
   }).join('');
 }
 document.getElementById('list').addEventListener('change',e=>{
-  const t=e.target; if(!t.matches('input[type=checkbox][data-id]')) return;
+  const t=e.target;
+  if (t.matches('input[type=file][data-add-photo]')) {
+    const personId = t.dataset.addPhoto;
+    const files = t.files ? [...t.files] : [];
+    t.value = '';
+    if (!files.length) return;
+    addDocketPhotos(personId, files).then(n => {
+      if (!n) { alert('Please choose a photo.'); return; }
+      render();
+    }).catch(() => alert('Could not save the photo on this phone.'));
+    return;
+  }
+  if(!t.matches('input[type=checkbox][data-id]')) return;
   if(t.checked) done[t.dataset.id]=true; else delete done[t.dataset.id];
   saveDone(); render();
 });
@@ -517,30 +720,134 @@ document.getElementById('btnDownloadReport').addEventListener('click', () => {
 
 
 
-function openDocketLightbox(paths, title) {
-  const box = document.getElementById('docketLightbox');
-  const imgs = document.getElementById('lbImgs');
-  document.getElementById('lbTitle').textContent = title ? ('Docket · ' + title) : 'Docket';
-  imgs.innerHTML = (paths||[]).map(src => `<img src="${escapeHtml(src)}" alt="Canteen docket"/>`).join('');
-  box.classList.add('open');
-  box.setAttribute('aria-hidden', 'false');
-}
 function closeDocketLightbox() {
   const box = document.getElementById('docketLightbox');
   box.classList.remove('open');
   box.setAttribute('aria-hidden', 'true');
-  document.getElementById('lbImgs').innerHTML = '';
+  document.getElementById('lbImgs').replaceChildren();
+  document.getElementById('lbActions').replaceChildren();
+  revokeLbUrls();
+  lbPersonId = null;
+}
+async function paintDocketLightbox(personId) {
+  if (lbPersonId !== personId) return;
+  const locals = await photosForPerson(personId);
+  if (lbPersonId !== personId) return;
+  revokeLbUrls();
+  const imgs = document.getElementById('lbImgs');
+  const actions = document.getElementById('lbActions');
+  imgs.replaceChildren();
+  actions.replaceChildren();
+  const staticPaths = staticDocketsFor(personId);
+  if (!locals.length && !staticPaths.length) {
+    const empty = document.createElement('p');
+    empty.className = 'lb-note';
+    empty.textContent = 'No docket photos on this phone.';
+    imgs.appendChild(empty);
+    return;
+  }
+  for (const rec of locals) {
+    const shot = document.createElement('div');
+    shot.className = 'lb-shot';
+    const cap = document.createElement('div');
+    cap.className = 'lb-cap';
+    cap.textContent = 'On this phone';
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(rec.blob);
+    lbObjectUrls.push(url);
+    img.src = url;
+    img.alt = 'Canteen docket photo on this phone';
+    img.addEventListener('error', () => {
+      const note = document.createElement('p');
+      note.className = 'lb-note';
+      note.textContent = 'Saved on this phone, but this browser cannot preview it.';
+      img.replaceWith(note);
+    });
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'lb-remove';
+    rm.dataset.photoId = String(rec.id);
+    rm.textContent = 'Remove photo';
+    shot.append(cap, img, rm);
+    imgs.appendChild(shot);
+  }
+  for (const src of staticPaths) {
+    const shot = document.createElement('div');
+    shot.className = 'lb-shot';
+    const cap = document.createElement('div');
+    cap.className = 'lb-cap';
+    cap.textContent = 'Saved with orders';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Canteen docket';
+    shot.append(cap, img);
+    imgs.appendChild(shot);
+  }
+  if (locals.length) {
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'lb-clear';
+    clear.textContent = locals.length === 1 ? 'Clear photo on this phone' : 'Clear all photos on this phone';
+    actions.appendChild(clear);
+  }
+}
+function openDocketLightbox(personId, title) {
+  revokeLbUrls();
+  lbPersonId = personId;
+  const box = document.getElementById('docketLightbox');
+  const imgs = document.getElementById('lbImgs');
+  document.getElementById('lbTitle').textContent = title ? ('Docket · ' + title) : 'Docket';
+  document.getElementById('lbActions').replaceChildren();
+  imgs.replaceChildren();
+  const loading = document.createElement('p');
+  loading.className = 'lb-note';
+  loading.textContent = 'Loading photos…';
+  imgs.appendChild(loading);
+  box.classList.add('open');
+  box.setAttribute('aria-hidden', 'false');
+  paintDocketLightbox(personId).catch(() => {
+    if (lbPersonId !== personId) return;
+    imgs.replaceChildren();
+    const err = document.createElement('p');
+    err.className = 'lb-note';
+    err.textContent = 'Could not open photos saved on this phone.';
+    imgs.appendChild(err);
+  });
 }
 document.getElementById('list').addEventListener('click', (e) => {
   const btn = e.target.closest('.btn-docket');
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
-  let paths = [];
-  try { paths = JSON.parse(btn.dataset.dockets || '[]'); } catch {}
-  openDocketLightbox(paths, btn.dataset.docketName || '');
+  openDocketLightbox(btn.dataset.person || '', btn.dataset.docketName || '');
 });
 document.addEventListener('click', (e) => {
+  const rm = e.target.closest('.lb-remove');
+  if (rm) {
+    e.preventDefault();
+    e.stopPropagation();
+    const photoId = Number(rm.dataset.photoId);
+    const personId = lbPersonId;
+    if (!personId || !photoId) return;
+    rm.disabled = true;
+    deleteDocketPhoto(photoId).then(() => {
+      render();
+      if (lbPersonId === personId) return paintDocketLightbox(personId);
+    }).catch(() => alert('Could not remove that photo.'));
+    return;
+  }
+  if (e.target.closest('.lb-clear')) {
+    e.preventDefault();
+    e.stopPropagation();
+    const personId = lbPersonId;
+    if (!personId) return;
+    if (!confirm('Remove all docket photos for this order from this phone?')) return;
+    clearDocketPhotos(personId).then(() => {
+      render();
+      if (lbPersonId === personId) return paintDocketLightbox(personId);
+    }).catch(() => alert('Could not clear photos.'));
+    return;
+  }
   if (e.target.closest('#lbClose')) {
     e.preventDefault();
     e.stopPropagation();
@@ -553,6 +860,11 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDocketLightbox();
 });
 
+refreshDocketCounts().then(() => {
+  const active = document.activeElement;
+  if (active && active.matches && active.matches('textarea[data-person]')) return;
+  render();
+}).catch(() => {});
 render();
 </script>
 
