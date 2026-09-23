@@ -12,3 +12,5 @@ The app is blank until the next canteen day is loaded.
 - Observation report
 
 Ticks and notes save in the browser on each device (not synced live between phones).
+
+Docket photos added on the 11am recess and 1pm lunch cards stay on that phone in IndexedDB. They are not uploaded and do not sync across phones. The database name includes `STORAGE_KEY`, so a canteen-day wipe (a new storage key) starts with an empty photo library and leaves the previous day's pictures in the old database.
