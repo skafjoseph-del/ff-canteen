@@ -2,7 +2,7 @@
 
 Phone-friendly prep + handout checklist for school canteen day.
 
-Loaded for Thursday 24 Sep 2026 (10 canteen orders).
+Loaded for Thursday 24 Sep 2026 (11 canteen orders, including Joel Rees / Maja).
 
 **Live app:** https://skafjoseph-del.github.io/ff-canteen/
 
