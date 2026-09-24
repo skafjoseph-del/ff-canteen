@@ -65,6 +65,27 @@
   .label { font-size: 0.98rem; line-height: 1.35; flex: 1; }
   .qty { display: inline-block; min-width: 1.6em; font-weight: 700; color: var(--accent); margin-right: 4px; }
   .special { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--warn); font-weight: 600; }
+  .unit-tag {
+    display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 999px;
+    background: #f5f5f4; color: var(--muted); font-size: 0.72rem; font-weight: 800;
+    vertical-align: middle;
+  }
+  .item { align-items: center; }
+  .item-main {
+    display: flex; align-items: flex-start; gap: 12px;
+    flex: 1; min-width: 0; cursor: pointer;
+  }
+  .btn-move {
+    flex-shrink: 0; white-space: nowrap;
+    min-height: 44px; padding: 8px 12px; border-radius: 999px;
+    border: 1px solid var(--accent); background: #f0fdfa; color: var(--accent);
+    font-size: 0.8rem; font-weight: 800; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  .btn-move:active { background: #ccfbf1; }
+  .moved-hint {
+    display: block; margin-top: 2px; font-size: 0.72rem; font-weight: 700; color: var(--accent);
+  }
   
   .search-wrap { margin-top: 10px; }
   .search-wrap input {
@@ -246,7 +267,7 @@
   <button type="button" id="btnReport">Generate observation report</button>
 </header>
 <main id="list"></main>
-<footer class="tick-footer">Food Farmacy canteen · Thu 24 Sep 2026 · ticks save on this phone</footer>
+<footer class="tick-footer">Food Farmacy canteen · Thu 24 Sep 2026 · ticks and service moves save on this phone</footer>
 
 <section id="reportPage" aria-label="Observations report">
   <div class="report-top">
@@ -272,79 +293,150 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-09-24-v2';
+const STORAGE_KEY = 'ff-canteen-tick-2026-09-24-v3';
+// Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
+// order notes, then the product default (snacks → recess, everything else → lunch).
+// Future pulls should store lineNotes/orderNotes and call assignService — do not
+// hard-code service from the product list alone.
+function explicitService(text){
+  if (!text) return null;
+  const s = String(text).toLowerCase();
+  const lunch = /\blunch\b/.test(s);
+  const recess = /\brecess\b/.test(s);
+  if (lunch === recess) return null;
+  return lunch ? 'lunch' : 'recess';
+}
+function productDefaultService(name){
+  const n = String(name || '').toLowerCase();
+  if (n.includes('banana bread')) return 'recess';
+  if (n.includes('acai')) return 'recess';
+  if (n.includes('nudi')) return 'recess';
+  if (n.includes('buckwheat')) return 'recess';
+  if (n.includes('parfait')) return 'recess';
+  if (n.includes('tempeh')) return 'recess';
+  if (n.includes('cookie') && n.includes('oat')) return 'recess';
+  if (n.includes('loco love')) return 'recess';
+  return 'lunch';
+}
+function assignService(name, lineNotes, orderNotes){
+  return explicitService(lineNotes) || explicitService(orderNotes) || productDefaultService(name);
+}
+function expandItem(item, orderNotes){
+  const qty = Math.max(1, item.qty || 1);
+  const service = assignService(item.name, item.lineNotes, orderNotes);
+  const units = [];
+  for (let u = 1; u <= qty; u++) {
+    units.push({
+      ...item,
+      service,
+      qty: 1,
+      unit: u,
+      unitTotal: qty,
+      id: qty > 1 ? item.id + '-u' + u : item.id,
+    });
+  }
+  return units;
+}
+function expandPeople(people){
+  for (const p of people) {
+    const orderNotes = p.orderNotes || null;
+    p.items = p.items.flatMap(item => expandItem(item, orderNotes));
+  }
+}
 const PEOPLE = [
-  { id:'25727126', orderId:'25727126', dockets:['dockets/25727126.png'], name:'Maja Rees (Kindy)', parent:'Joel Rees', pickup:'Wed 23 Sep · 9:00', items:[
-    { id:'25727126-nacho-bowl-0', qty:1, name:'Nacho Bowl', service:'lunch' },
-    { id:'25727126-nudi-juice-200ml-tropical-1', qty:1, name:'Nudi Juice 200ml (Tropical)', service:'recess' },
+  { id:'25727126', orderId:'25727126', dockets:['dockets/25727126.png'], name:'Maja Rees (Kindy)', parent:'Joel Rees', pickup:'Wed 23 Sep · 9:00', orderNotes:'Maja Rees - Kindy', items:[
+    { id:'25727126-nacho-bowl-0', qty:1, name:'Nacho Bowl' },
+    { id:'25727126-nudi-juice-200ml-tropical-1', qty:1, name:'Nudi Juice 200ml (Tropical)' },
   ]},
   { id:'25727755', orderId:'25727755', dockets:['dockets/25727755.png'], name:'Zahlia & Zamira', parent:'Olivia Patrick', pickup:'9:00', items:[
-    { id:'25727755-acai-cup-0', qty:1, name:'Acai Cup', service:'recess' },
-    { id:'25727755-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie', service:'recess' },
-    { id:'25727755-refried-beans-toastie-2', qty:2, name:'Refried Beans Toastie', service:'lunch' },
+    { id:'25727755-acai-cup-0', qty:1, name:'Acai Cup' },
+    { id:'25727755-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie' },
+    { id:'25727755-refried-beans-toastie-2', qty:2, name:'Refried Beans Toastie' },
   ]},
   { id:'25725608', orderId:'25725608', dockets:['dockets/25725608.png'], name:'Chloe', parent:'Karina Mora', pickup:'10:00', items:[
-    { id:'25725608-gf-banana-bread-0', qty:2, name:'GF Banana Bread', service:'recess', child:'Chloe' },
-    { id:'25725608-sausage-roll-1', qty:1, name:'Sausage Roll', service:'lunch', child:'Chloe' },
+    { id:'25725608-gf-banana-bread-0', qty:2, name:'GF Banana Bread', child:'Chloe' },
+    { id:'25725608-sausage-roll-1', qty:1, name:'Sausage Roll', child:'Chloe' },
   ]},
   { id:'25725998', orderId:'25725998', dockets:['dockets/25725998.png'], name:'Jada', parent:'Krystal Mills', pickup:'10:15', items:[
-    { id:'25725998-loco-love-hazelnut-butter-praline-0', qty:1, name:'Loco Love (Hazelnut Butter Praline)', service:'recess', child:'Jada' },
-    { id:'25725998-nacho-bowl-1', qty:1, name:'Nacho Bowl', service:'lunch', child:'Jada' },
+    { id:'25725998-loco-love-hazelnut-butter-praline-0', qty:1, name:'Loco Love (Hazelnut Butter Praline)', child:'Jada' },
+    { id:'25725998-nacho-bowl-1', qty:1, name:'Nacho Bowl', child:'Jada' },
   ]},
-  { id:'25726063', orderId:'25726063', dockets:['dockets/25726063.png'], name:'Hannah Deves', parent:'Alexis Deves', pickup:'10:30 · Toronto', items:[
-    { id:'25726063-loco-love-double-chocolate-0', qty:1, name:'Loco Love (Double Chocolate)', service:'recess' },
-    { id:'25726063-sausage-roll-1', qty:1, name:'Sausage Roll', service:'lunch' },
+  { id:'25726063', orderId:'25726063', dockets:['dockets/25726063.png'], name:'Hannah Deves', parent:'Alexis Deves', pickup:'10:30 · Toronto', orderNotes:'Hannah Deves - Toronto', items:[
+    { id:'25726063-loco-love-double-chocolate-0', qty:1, name:'Loco Love (Double Chocolate)', lineNotes:'Hannah Deves - Toronto' },
+    { id:'25726063-sausage-roll-1', qty:1, name:'Sausage Roll', lineNotes:'Hannah Deves - Toronto' },
   ]},
   { id:'25725689', orderId:'25725689', dockets:['dockets/25725689.png'], name:'Adam Kavanagh', parent:'Adam Kavanagh', pickup:'11:00', items:[
-    { id:'25725689-gf-banana-bread-0', qty:2, name:'GF Banana Bread', service:'recess' },
-    { id:'25725689-nacho-bowl-1', qty:2, name:'Nacho Bowl', service:'lunch' },
+    { id:'25725689-gf-banana-bread-0', qty:2, name:'GF Banana Bread', lineNotes:'Recess' },
+    { id:'25725689-nacho-bowl-1', qty:2, name:'Nacho Bowl', lineNotes:'Lunch' },
   ]},
   { id:'25726035', orderId:'25726035', dockets:['dockets/25726035.png'], name:'Hannah & Koen', parent:'Bronwyn Stafford', pickup:'11:00', items:[
-    { id:'25726035-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'recess', child:'Koen' },
-    { id:'25726035-loco-love-hazelnut-butter-praline-1', qty:1, name:'Loco Love (Hazelnut Butter Praline)', service:'recess', child:'Koen' },
-    { id:'25726035-nudi-juice-200ml-orange-2', qty:1, name:'Nudi Juice 200ml (Orange)', service:'recess', child:'Koen' },
-    { id:'25726035-parfaits-3', qty:1, name:'Parfaits', service:'recess', child:'Hannah' },
-    { id:'25726035-pies-creamy-mushroom-4', qty:2, name:'Pies (Creamy Mushroom)', service:'lunch', child:'Hannah' },
-    { id:'25726035-sausage-roll-5', qty:1, name:'Sausage Roll', service:'lunch', child:'Koen' },
-    { id:'25726035-tempeh-chips-sea-salt-6', qty:1, name:'Tempeh Chips (Sea Salt)', service:'recess', child:'Hannah' },
+    { id:'25726035-gf-banana-bread-0', qty:1, name:'GF Banana Bread', child:'Koen', lineNotes:'Koen Stafford' },
+    { id:'25726035-loco-love-hazelnut-butter-praline-1', qty:1, name:'Loco Love (Hazelnut Butter Praline)', child:'Koen', lineNotes:'Koen Stafford' },
+    { id:'25726035-nudi-juice-200ml-orange-2', qty:1, name:'Nudi Juice 200ml (Orange)', child:'Koen', lineNotes:'Koen stafford' },
+    { id:'25726035-parfaits-3', qty:1, name:'Parfaits', child:'Hannah', lineNotes:'Hannah stafford' },
+    { id:'25726035-pies-creamy-mushroom-4', qty:2, name:'Pies (Creamy Mushroom)', child:'Hannah', lineNotes:'Hannah stafford' },
+    { id:'25726035-sausage-roll-5', qty:1, name:'Sausage Roll', child:'Koen', lineNotes:'Koen Stafford' },
+    { id:'25726035-tempeh-chips-sea-salt-6', qty:1, name:'Tempeh Chips (Sea Salt)', child:'Hannah', lineNotes:'Hannah stafford' },
   ]},
-  { id:'25727007', orderId:'25727007', dockets:['dockets/25727007.png'], name:'Oscar Roki', parent:'Luke Roki', pickup:'11:00', items:[
-    { id:'25727007-loco-love-strawberry-0', qty:1, name:'Loco Love (Strawberry)', service:'recess' },
+  { id:'25727007', orderId:'25727007', dockets:['dockets/25727007.png'], name:'Oscar Roki', parent:'Luke Roki', pickup:'11:00', orderNotes:'Oscar Roki', items:[
+    { id:'25727007-loco-love-strawberry-0', qty:1, name:'Loco Love (Strawberry)' },
   ]},
   { id:'25732038', orderId:'25732038', dockets:['dockets/25732038.png'], name:'Ariana & Emilia', parent:'Natasha Curnow', pickup:'11:00', items:[
-    { id:'25732038-acai-cup-0', qty:1, name:'Acai Cup', service:'recess', child:'Ariana' },
-    { id:'25732038-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie', service:'recess', child:'Emilia' },
-    { id:'25732038-loco-love-chewy-caramel-2', qty:1, name:'Loco Love (Chewy Caramel)', service:'recess', child:'Emilia' },
-    { id:'25732038-pasta-napolitana-sauce-whole-wheat-3', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch', child:'Ariana' },
+    { id:'25732038-acai-cup-0', qty:1, name:'Acai Cup', child:'Ariana', lineNotes:'Ariana recess' },
+    { id:'25732038-gf-buckwheat-choc-chip-cookie-1', qty:1, name:'GF Buckwheat Choc Chip Cookie', child:'Emilia', lineNotes:'Emilia recess' },
+    { id:'25732038-loco-love-chewy-caramel-2', qty:1, name:'Loco Love (Chewy Caramel)', child:'Emilia', lineNotes:'Emilia lunch' },
+    { id:'25732038-pasta-napolitana-sauce-whole-wheat-3', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', child:'Ariana', lineNotes:'Ariana lunch' },
   ]},
   { id:'25712569', orderId:'25712569', dockets:['dockets/25712569.png'], name:'Abigail & Mario', parent:'Karin Gonzalez', pickup:'12:30', items:[
-    { id:'25712569-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'recess', child:'Mario' },
-    { id:'25712569-gf-oats-and-raisin-cookie-1', qty:1, name:'GF Oats and Raisin Cookie', service:'recess', child:'Abigail' },
-    { id:'25712569-pasta-napolitana-sauce-whole-wheat-2', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch', special:'no sauce please', child:'Mario' },
-    { id:'25712569-refried-beans-toastie-3', qty:1, name:'Refried Beans Toastie', service:'lunch', child:'Abigail' },
+    { id:'25712569-gf-banana-bread-0', qty:1, name:'GF Banana Bread', child:'Mario', lineNotes:'Mario P' },
+    { id:'25712569-gf-oats-and-raisin-cookie-1', qty:1, name:'GF Oats and Raisin Cookie', child:'Abigail', lineNotes:'Abigail Pacheco' },
+    { id:'25712569-pasta-napolitana-sauce-whole-wheat-2', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', special:'no sauce please', child:'Mario', lineNotes:'Mario P no sauce please' },
+    { id:'25712569-refried-beans-toastie-3', qty:1, name:'Refried Beans Toastie', child:'Abigail', lineNotes:'Abigail Pacheco' },
   ]},
-  { id:'25722794', orderId:'25722794', dockets:['dockets/25722794.png'], name:'Freyja', pickup:'1:00pm', items:[
-    { id:'25722794-gf-banana-bread-0', qty:1, name:'GF Banana Bread', service:'recess' },
-    { id:'25722794-pasta-napolitana-sauce-whole-wheat-1', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)', service:'lunch' },
+  { id:'25722794', orderId:'25722794', dockets:['dockets/25722794.png'], name:'Freyja', pickup:'1:00pm', orderNotes:'Freyja lunch', items:[
+    { id:'25722794-gf-banana-bread-0', qty:1, name:'GF Banana Bread' },
+    { id:'25722794-pasta-napolitana-sauce-whole-wheat-1', qty:1, name:'Pasta & Napolitana Sauce (Whole Wheat)' },
   ]},
 ];
+expandPeople(PEOPLE);
 let view = 'prep-recess';
 let searchQuery = '';
 let statusFilter = 'all';
+const MOVE_KEY = STORAGE_KEY + '-moves';
+const OBS_KEY = 'ff-canteen-tick-2026-09-24-observations';
+const OBS_KEY_PREV = 'ff-canteen-tick-2026-09-24-v2-observations';
 let done = loadDone();
 let observations = loadObs();
+let serviceMoves = loadMoves();
 function loadDone(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch { return {}; } }
 function saveDone(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(done)); }
-const OBS_KEY = STORAGE_KEY + '-observations';
-function loadObs(){ try { return JSON.parse(localStorage.getItem(OBS_KEY)||'{}'); } catch { return {}; } }
+function loadMoves(){ try { return JSON.parse(localStorage.getItem(MOVE_KEY)||'{}'); } catch { return {}; } }
+function saveMoves(){ localStorage.setItem(MOVE_KEY, JSON.stringify(serviceMoves)); }
+function loadObs(){
+  try {
+    const cur = localStorage.getItem(OBS_KEY);
+    if (cur) return JSON.parse(cur);
+    const prev = localStorage.getItem(OBS_KEY_PREV);
+    if (prev) { localStorage.setItem(OBS_KEY, prev); return JSON.parse(prev); }
+  } catch { /* keep empty */ }
+  return {};
+}
 function saveObs(){ localStorage.setItem(OBS_KEY, JSON.stringify(observations)); }
 function isPrepView(){ return view.startsWith('prep-'); }
 function serviceOfView(){ return view.endsWith('recess') ? 'recess' : 'lunch'; }
 function prepKey(svc, name){ return 'prep:' + svc + ':' + name; }
+function effectiveService(item){
+  const moved = serviceMoves[item.id];
+  return (moved === 'lunch' || moved === 'recess') ? moved : item.service;
+}
+function findItem(id){
+  for (const p of PEOPLE) for (const i of p.items) if (i.id === id) return i;
+  return null;
+}
 function itemsForService(svc){
   const out=[];
   for (const p of PEOPLE){
-    const items=p.items.filter(i=>i.service===svc);
+    const items=p.items.filter(i=>effectiveService(i)===svc);
     if(items.length) out.push({...p, items});
   }
   out.sort((a,b)=>a.name.localeCompare(b.name));
@@ -354,7 +446,7 @@ function aggregatePrep(svc){
   const map = new Map();
   for (const p of PEOPLE){
     for (const i of p.items){
-      if (i.service !== svc) continue;
+      if (effectiveService(i) !== svc) continue;
       const prev = map.get(i.name) || 0;
       map.set(i.name, prev + i.qty);
     }
@@ -445,8 +537,21 @@ function render(){
     const badge=g.missing?'<span class="badge">WAS MISSING</span>':'';
     const rows=g.items.map(i=>{
       const isDone=!!done[i.id];
+      const svcNow = effectiveService(i);
+      const other = svcNow === 'recess' ? 'lunch' : 'recess';
+      const otherLabel = other === 'lunch' ? 'Lunch' : 'Recess';
       const childTag = i.child ? `<span class="child-tag">${escapeHtml(i.child)}</span>` : '';
-      return `<label class="item ${isDone?'done':''}"><input type="checkbox" data-id="${i.id}" ${isDone?'checked':''}/><span class="label"><span class="qty">${i.qty}×</span>${childTag}${escapeHtml(i.name)}${i.special?`<span class="special">${escapeHtml(i.special)}</span>`:''}</span></label>`;
+      const unitTag = i.unitTotal > 1 ? `<span class="unit-tag">${i.unit} of ${i.unitTotal}</span>` : '';
+      const movedHint = (serviceMoves[i.id] && serviceMoves[i.id] !== i.service)
+        ? `<span class="moved-hint">moved from ${escapeHtml(i.service)}</span>` : '';
+      const special = i.special ? `<span class="special">${escapeHtml(i.special)}</span>` : '';
+      return `<div class="item ${isDone?'done':''}">
+        <label class="item-main">
+          <input type="checkbox" data-id="${escapeHtml(i.id)}" ${isDone?'checked':''}/>
+          <span class="label">${unitTag}${childTag}${escapeHtml(i.name)}${special}${movedHint}</span>
+        </label>
+        <button type="button" class="btn-move" data-move-id="${escapeHtml(i.id)}" data-move-to="${other}" aria-label="Move ${escapeHtml(i.name)} to ${otherLabel}">→ ${otherLabel}</button>
+      </div>`;
     }).join('');
         const obsVal = observations[g.id] || '';
     const obsClass = obsVal.trim() ? 'has-text' : '';
@@ -594,6 +699,20 @@ function closeDocketLightbox() {
   document.getElementById('lbImgs').innerHTML = '';
 }
 document.getElementById('list').addEventListener('click', (e) => {
+  const moveBtn = e.target.closest('.btn-move');
+  if (moveBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = moveBtn.dataset.moveId;
+    const to = moveBtn.dataset.moveTo;
+    const item = findItem(id);
+    if (!item || (to !== 'lunch' && to !== 'recess')) return;
+    if (to === item.service) delete serviceMoves[id];
+    else serviceMoves[id] = to;
+    saveMoves();
+    render();
+    return;
+  }
   const btn = e.target.closest('.btn-docket');
   if (!btn) return;
   e.preventDefault();
