@@ -198,11 +198,25 @@
   .prep-row input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--accent); flex-shrink: 0; }
   .tabs { flex-wrap: wrap; }
   .tab { font-size: 0.82rem; }
+  /* Five tabs: on phones, prep + checklist on the first row, handout on the second. */
+  @media (max-width: 640px) {
+    .tabs { gap: 6px; }
+    .tab {
+      flex: 1 1 calc(33.333% - 6px);
+      padding: 10px 6px;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      white-space: normal;
+    }
+  }
   .chrome-handout .search-wrap,
   .chrome-handout .filters,
   .chrome-handout #btnReport,
   body.mode-prep .search-wrap,
-  body.mode-prep #btnReport { display: none; }
+  body.mode-prep #btnReport,
+  body.mode-checklist .search-wrap,
+  body.mode-checklist .filters,
+  body.mode-checklist #btnReport { display: none; }
 
 
 
@@ -248,6 +262,7 @@
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
+    <button class="tab" data-view="ff-checklist" type="button">FF Checklist</button>
     <button class="tab" data-view="handout-recess" type="button">11am recess</button>
     <button class="tab" data-view="handout-lunch" type="button">1pm lunch</button>
   </div>
@@ -294,6 +309,8 @@
 
 <script>
 const STORAGE_KEY = 'ff-canteen-tick-2026-09-24-v3';
+// FF Checklist ticks live in this same object as "checklist:<item name>".
+// STORAGE_KEY is not bumped, so recess/lunch ticks survive a hard refresh.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
 // order notes, then the product default (snacks → recess, everything else → lunch).
 // Future pulls should store lineNotes/orderNotes and call assignService — do not
@@ -423,8 +440,11 @@ function loadObs(){
 }
 function saveObs(){ localStorage.setItem(OBS_KEY, JSON.stringify(observations)); }
 function isPrepView(){ return view.startsWith('prep-'); }
+function isChecklistView(){ return view === 'ff-checklist'; }
 function serviceOfView(){ return view.endsWith('recess') ? 'recess' : 'lunch'; }
 function prepKey(svc, name){ return 'prep:' + svc + ':' + name; }
+function checklistKey(name){ return 'checklist:' + name; }
+const CHECKLIST_LETTUCE = 'Head of Lettuce';
 function effectiveService(item){
   const moved = serviceMoves[item.id];
   return (moved === 'lunch' || moved === 'recess') ? moved : item.service;
@@ -455,26 +475,51 @@ function aggregatePrep(svc){
     .map(([name, qty]) => ({ id: prepKey(svc, name), name, qty }))
     .sort((a,b) => a.name.localeCompare(b.name));
 }
+// Global stock list: every expanded unit once, across both services.
+// A service move only changes effectiveService; it does not copy the line,
+// so summing here cannot double-count. Always add 1 Head of Lettuce
+// (nacho-bowl ingredient), even when lettuce is never ordered on its own.
+function aggregateChecklist(){
+  const map = new Map();
+  for (const p of PEOPLE){
+    for (const i of p.items){
+      const prev = map.get(i.name) || 0;
+      map.set(i.name, prev + i.qty);
+    }
+  }
+  map.set(CHECKLIST_LETTUCE, (map.get(CHECKLIST_LETTUCE) || 0) + 1);
+  return [...map.entries()]
+    .map(([name, qty]) => ({ id: checklistKey(name), name, qty }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+}
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function render(){
   const list=document.getElementById('list');
   document.body.classList.toggle('mode-prep', isPrepView());
+  document.body.classList.toggle('mode-checklist', isChecklistView());
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
 
-  if (isPrepView()) {
-    const svc = serviceOfView();
-    let rows = aggregatePrep(svc);
+  if (isPrepView() || isChecklistView()) {
+    const checklist = isChecklistView();
+    let rows = checklist ? aggregateChecklist() : aggregatePrep(serviceOfView());
     let svcTotal = 0, svcChecked = 0;
     for (const r of rows) { svcTotal += r.qty; if (done[r.id]) svcChecked += r.qty; }
-    document.getElementById('progText').textContent = `${svcChecked} / ${svcTotal} prepped`;
+    const verb = checklist ? 'checked' : 'prepped';
+    document.getElementById('progText').textContent = `${svcChecked} / ${svcTotal} ${verb}`;
     document.getElementById('leftText').textContent = svcTotal ? `${svcTotal - svcChecked} left` : '';
     document.getElementById('progBar').style.width = svcTotal ? `${(svcChecked/svcTotal)*100}%` : '0%';
 
-    if (statusFilter === 'incomplete') rows = rows.filter(r => !done[r.id]);
-    else if (statusFilter === 'complete') rows = rows.filter(r => !!done[r.id]);
+    // Checklist chrome hides the filter chips, so always show the full global list.
+    if (!checklist) {
+      if (statusFilter === 'incomplete') rows = rows.filter(r => !done[r.id]);
+      else if (statusFilter === 'complete') rows = rows.filter(r => !!done[r.id]);
+    }
 
     if (!rows.length) {
-      list.innerHTML = `<div class="no-match">${statusFilter==='complete'?'Nothing marked prepped yet':statusFilter==='incomplete'?'All prep items done':'Nothing to prep'}</div>`;
+      const empty = checklist
+        ? 'Nothing on the checklist'
+        : (statusFilter==='complete'?'Nothing marked prepped yet':statusFilter==='incomplete'?'All prep items done':'Nothing to prep');
+      list.innerHTML = `<div class="no-match">${empty}</div>`;
       return;
     }
     list.innerHTML = rows.map(r => {
