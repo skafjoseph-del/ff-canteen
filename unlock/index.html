@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Unlock">
+<meta name="theme-color" content="#0f1115"><title>Unlock – Stretching</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--tx:#eef0f4;--mu:#9aa3b2;--ac:#5ad1a8;--ac2:#3a8f75;--bd:#2a2f3a}
+.light{--bg:#f4f5f8;--card:#fff;--tx:#14161b;--mu:#5d6675;--ac:#1f9e77;--ac2:#bfe9da;--bd:#e1e4ea}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top) 0 90px}
+header{padding:18px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font-size:26px}.mu{color:var(--mu);font-size:14px}
+button{font:inherit;border:0;border-radius:12px;min-height:44px;min-width:44px;cursor:pointer;background:var(--bd);color:var(--tx)}
+.tabs{display:flex;gap:8px;padding:8px 16px;overflow-x:auto}.tabs button{padding:0 14px;white-space:nowrap}.tabs .on{background:var(--ac);color:#000}
+.stats{padding:0 16px;font-size:14px;color:var(--mu)}
+.list{padding:8px 16px;display:grid;gap:10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px}
+.card .n{flex:1}.card b{display:block;font-size:16px}.dur{width:56px;padding:6px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:15px}
+.t{font-variant-numeric:tabular-nums;font-size:20px;width:58px;text-align:right}.card.done{opacity:.55}
+.go{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--ac);color:#000;font-size:18px;font-weight:700;min-height:56px}
+.ov{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;padding:calc(20px + env(safe-area-inset-top)) 20px 30px;z-index:5}
+.ov.show{display:flex}.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac);width:0;transition:width .3s}
+.big{font-size:96px;font-weight:200;text-align:center;font-variant-numeric:tabular-nums;margin:auto 0 10px}
+.ctl{display:flex;gap:12px;justify-content:center}.ctl button{flex:1;min-height:60px;font-size:18px}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;z-index:9}.modal.show{display:flex}
+.sheet{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}
+a{color:var(--ac)}h3{margin:12px 0 4px;font-size:14px;color:var(--mu);text-transform:uppercase}
+
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);z-index:4}
+nav button{flex:1;background:none;border-radius:0;min-height:58px;font-size:12px;color:var(--mu)}nav button.on{color:var(--ac)}nav span{display:block;font-size:20px}
+.go{bottom:calc(70px + env(safe-area-inset-bottom))}body{padding-bottom:150px}
+.note{margin:6px 16px;padding:10px 12px;border-radius:12px;background:#e0a3241f;border:1px solid #e0a32466;font-size:13px}
+.rc{font-size:14px;color:var(--mu)}.sm{min-width:40px;padding:0 8px}
+</style><link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head><body>
+<header><div><h1>Unlock</h1><div class="mu" id="sum"></div></div><button id="theme" aria-label="theme">◐</button></header>
+<div class="tabs" id="tabs"></div><div class="note" id="note"></div><div class="stats" id="stats"></div><div class="list" id="list"></div>
+<button class="go" id="go">▶ Start routine</button><nav id="nav"></nav>
+<div class="ov" id="ov"><div class="bar"><i id="pb"></i></div><div class="mu" id="ostep" style="margin-top:10px"></div>
+<h2 id="oname" style="font-size:28px;margin:30px 0 4px;text-align:center"></h2><div id="oside" style="text-align:center;color:var(--ac);font-size:20px"></div>
+<div class="big" id="otime">0</div><button id="dn" style="display:none;background:var(--ac);color:#000;font-size:20px;font-weight:700;min-height:64px;margin-bottom:12px">✓ Done set</button>
+<div class="mu" id="onext" style="text-align:center;margin-bottom:16px"></div>
+<div class="ctl"><button id="bk">⏮</button><button id="pp">⏸</button><button id="sk">⏭</button></div>
+<div class="ctl" style="margin-top:12px"><button id="vc">🔊 Voice on</button><button id="ex">✕ End</button></div></div>
+<div class="modal" id="md"><div class="sheet" id="sh"></div></div>
+<script>
+const S=[["breath","Diaphragmatic breathing (child's pose)",60,0,"Diaphragm, lower back, ribs","Downshifts the nervous system; opens rib cage for better breathing on the bike and in the water.",["Kneel, sit hips to heels, forehead down","Breathe into your back ribs for 4s","Exhale slowly for 6s"]],
+["catcow","Cat–cow",60,0,"Spine, neck, abdominals","Mobilises a spine stiff from aero position; warms up for everything else.",["On hands and knees","Inhale: drop belly, lift chest","Exhale: round spine, tuck chin"]],
+["thread","Thread the needle",45,1,"Upper back, rear shoulders","Thoracic rotation for swim stroke and breathing; relieves upper back after long rides.",["From all fours, slide one arm under the other","Rest shoulder and temple down","Reach other arm forward or up"]],
+["child","Child's pose (wide knee, arms reaching)",60,0,"Lats, lower back, hips","Lengthens lats for freestyle reach; relaxes the lower back.",["Knees wide, big toes touching","Walk hands far forward","Sink hips back to heels"]],
+["dog","Downward dog with pedalling heels",60,0,"Calves, hamstrings, shoulders","Loosens calves and Achilles for running; opens shoulders.",["Hips high, hands shoulder-width","Alternate bending knees, pressing heels down","Keep spine long"]],
+["lunge","Low lunge / hip flexor stretch (kneeling, arm up)",60,1,"Hip flexors, psoas, quads","Counteracts the closed hip angle of cycling; improves running stride.",["Kneel with one foot forward","Tuck pelvis, squeeze back glute","Reach same-side arm overhead"]],
+["halfsplit","Half split (hamstring)",60,1,"Hamstrings, calves","Hamstrings get tight from pedalling and running; helps low-back comfort.",["From low lunge, shift hips back","Straighten front leg, flex toes up","Hinge forward with a flat back"]],
+["wgs","World's greatest stretch",45,1,"Hips, hamstrings, thoracic spine","Combined hip and spine mobility; great all-round for triathletes.",["Lunge, hand inside front foot","Rotate and reach top arm to the sky","Then straighten front leg briefly"]],
+["9090","90/90 hip switch then hold",60,1,"Hip internal & external rotators","Restores hip rotation lost to repetitive straight-line sports.",["Sit, both knees bent at 90°","Switch knees side to side a few times","Hold, lean over front shin"]],
+["pigeon","Pigeon pose (glute/piriformis)",75,1,"Glutes, piriformis, hip rotators","Releases glutes that work hard on climbs and runs; can ease sciatic tightness.",["Front shin angled across mat","Back leg long behind","Square hips and fold forward"]],
+["frog","Frog stretch (adductors)",60,0,"Adductors, groin","Opens inner thighs; helps hip stability and breaststroke-free hip range.",["On forearms, knees wide","Ankles in line with knees","Gently rock hips back"]],
+["butterfly","Butterfly",60,0,"Adductors, inner hips","Gentle groin opener; relaxes hips after riding.",["Sit, soles of feet together","Hold feet, sit tall","Hinge forward slightly"]],
+["fold","Seated forward fold",60,0,"Hamstrings, back","Lengthens posterior chain for comfort in aero and running.",["Legs straight in front","Hinge from hips","Relax neck, breathe"]],
+["couch","Couch stretch (quads/hip flexor, at wall)",60,1,"Quads, rectus femoris, hip flexors","Deep quad release — key for cyclists' tight front thighs.",["Back knee at wall, shin up the wall","Front foot forward in lunge","Squeeze glute, stay upright"]],
+["calf","Standing calf stretch (straight knee)",45,1,"Gastrocnemius","Protects Achilles and calves for running off the bike.",["Hands on wall, one leg back","Back knee straight, heel down","Lean in gently"]],
+["soleus","Soleus stretch (bent knee)",45,1,"Soleus, Achilles","Deep calf muscle that takes huge load running; key for injury prevention.",["Same as calf stretch","Bend the back knee","Keep heel down"]],
+["twist","Lying spinal twist",60,1,"Lower back, glutes, chest","Releases lower back after riding; mobilises rotation for swimming.",["Lie on back, knee across body","Arm out to side","Look away from knee"]],
+["pec","Doorway pec / chest stretch",45,1,"Pecs, front shoulder","Opens chest closed by aero position; improves swim reach and posture.",["Forearm on door frame at shoulder height","Step through gently","Keep ribs down"]],
+["xbody","Cross-body shoulder stretch",30,1,"Rear deltoid, upper back","Eases shoulder tension from swimming.",["Bring arm across chest","Pull gently above elbow","Keep shoulder down"]],
+["tricep","Overhead triceps / lat stretch",30,1,"Triceps, lats","Lat length for freestyle catch and reach.",["Arm overhead, hand behind head","Pull elbow with other hand","Lean slightly sideways"]],
+["neck","Neck side stretch",30,1,"Upper traps, neck","Relieves neck strain from looking up on the bike and breathing in swim.",["Sit tall","Ear toward shoulder","Lightly assist with hand"]],
+["baby","Happy baby",60,0,"Hips, groin, lower back","Relaxing hip and low-back release.",["Lie on back, hold outside of feet","Knees toward armpits","Rock gently side to side"]],
+["wall","Legs up the wall + breathing",120,0,"Hamstrings, lower legs (recovery)","Drains tired legs and calms the body — perfect after long sessions.",["Hips near wall, legs up","Arms relaxed","Slow nasal breathing"]],
+["fig4","IT/glute figure-4",60,1,"Glutes, outer hip, ITB area","Relieves outer hip tightness common in runners.",["Lie on back, ankle over opposite knee","Pull the lower thigh toward chest","Relax the top knee out"]],
+["legswing","Leg swings front/back",30,1,"Hip flexors, hamstrings (dynamic)","Opens hip range before running; primes stride.",["Hold a wall for balance","Swing leg forward and back, relaxed","Gradually increase range"]],
+["legswingside","Leg swings side to side",30,1,"Adductors, abductors (dynamic)","Wakes up lateral hip stabilisers for running.",["Face the wall, hands on it","Swing leg across body and out","Keep torso still"]],
+["lungerot","Walking lunges with rotation",60,0,"Hip flexors, glutes, thoracic spine","Dynamic hip and spine prep for running and riding.",["Step into a lunge","Rotate torso over front leg","Alternate legs walking forward"]],
+["highknees","High knees",30,0,"Hip flexors, calves (drill)","Raises heart rate; drills knee drive.",["Run on the spot","Drive knees to hip height","Quick light feet"]],
+["buttkicks","Butt kicks",30,0,"Quads, hamstrings (drill)","Warms quads; drills fast heel recovery.",["Jog on the spot","Flick heels to glutes","Stay tall"]],
+["askips","A-skips",45,0,"Hip flexors, calves, coordination","Classic running drill for posture and foot strike.",["Skip with high knee drive","Land on the forefoot under the hip","Opposite arm drives"]],
+["hipcircles","Hip circles",30,1,"Hip joint capsule","Lubricates hips before running or riding.",["Stand on one leg holding support","Draw big circles with knee","Reverse direction halfway"]],
+["anklerolls","Ankle rolls",30,1,"Ankle joint, calves","Prepares ankles for impact.",["Lift one foot","Circle ankle slowly","Change direction halfway"]],
+["bridge","Glute bridges",{s:2,r:12,rest:15},0,"Glutes, hamstrings (activation)","Switches on glutes for power and knee protection.",["Lie on back, knees bent","Drive hips up, squeeze glutes","Lower with control"]],
+["calfraise","Calf raises",{s:2,r:15,rest:15},0,"Calves, Achilles (activation)","Primes calves and Achilles for running.",["Stand tall, feet hip width","Rise onto toes","Lower slowly"]],
+["squat","Bodyweight squats",{s:2,r:12,rest:15},0,"Quads, glutes, hips","Warms main pedalling muscles.",["Feet shoulder width","Sit hips back and down","Drive up through heels"]],
+["armcircles","Arm circles forward/back",40,0,"Shoulders, rotator cuff","Warms shoulders before swimming.",["Arms out to the sides","Small to big circles forward","Then backward"]],
+["armswings","Arm swings (open/close)",30,0,"Chest, upper back","Dynamic chest opener for swim catch.",["Swing arms wide open","Then cross in front","Alternate top arm"]],
+["thoracicrot","Thoracic rotations",30,1,"Thoracic spine","Rotation for breathing and body roll in freestyle.",["Side-lying, knees bent, arms together","Open top arm to other side","Follow hand with eyes"]],
+["dislocates","Towel/band shoulder dislocates",{s:2,r:10,rest:15},0,"Shoulders, chest","Full shoulder range before swimming.",["Hold towel/band wide","Lift over head and behind","Keep arms straight, go slow"]],
+["scappush","Scap push-ups",{s:2,r:12,rest:15},0,"Serratus, scapular stabilisers","Activates shoulder blade muscles for a strong catch.",["Plank on hands","Keep arms straight","Squeeze then spread shoulder blades"]],
+["streamline","Streamline reach",30,0,"Lats, shoulders, side body","Rehearses a long streamline position.",["Arms overhead, hands stacked","Squeeze ears with arms","Reach tall, lean side to side"]],
+["fr_quad","Foam roll: quads",60,1,"Quadriceps","Releases tight front thighs from cycling.",["Face down, roller under thigh","Roll hip to just above knee","Pause on tender spots 10s"]],
+["fr_tfl","Foam roll: TFL / outer thigh (not the IT band)",45,1,"TFL, vastus lateralis","Eases outer hip tightness. Don't roll directly on the IT band: it's a tendon and rolling it does little and can irritate.",["Lie on side, slightly rolled forward","Roll the front-outer hip and outer quad","Avoid the bony middle line of the thigh"]],
+["fr_calf","Foam roll: calves",60,1,"Calves","Relieves calf tightness after running.",["Roller under calf, hands behind","Cross other leg on top for pressure","Rotate foot in and out"]],
+["fr_glute","Foam roll: glutes",60,1,"Glutes, piriformis","Releases glutes after hard efforts.",["Sit on roller, cross ankle over knee","Lean into the crossed side","Roll slowly"]],
+["fr_ham","Foam roll: hamstrings",60,1,"Hamstrings","Eases hamstrings tight from riding.",["Roller under thigh","Lift hips, roll knee to glute","Turn leg in and out"]],
+["fr_tspine","Foam roll: thoracic spine",60,0,"Upper back","Opens upper back hunched in aero position.",["Roller across upper back","Hands behind head, hips down","Roll mid to upper back, not the low back"]],
+["ball_foot","Massage ball: plantar fascia",60,1,"Plantar fascia, foot arch","Helps sore arches and foot fatigue from running.",["Standing or seated, ball under arch","Roll heel to toes","Moderate pressure"]],
+["ball_glute","Massage ball: glute/piriformis",60,1,"Piriformis, deep glutes","Targets deep hip knots.",["Sit or lie on ball under glute","Find tender spot, hold 20–30s","Bend/straighten knee gently"]],
+["ball_tfl","Massage ball: TFL",45,1,"TFL (front of outer hip)","Releases a muscle that often contributes to knee tracking issues.",["Lie face down at an angle","Ball just below front hip bone","Small movements, breathe"]],
+["clam","Clamshells",{s:3,r:15,rest:30},1,"Glute medius","Strengthens hip stabilisers that keep the knee tracking.",["Side-lying, knees bent 45°","Feet together, open top knee","Don't roll pelvis back"]],
+["sidelegraise","Side-lying leg raise",{s:3,r:12,rest:30},1,"Glute medius, hip abductors","Hip abductor strength for knee control.",["Lie on side, bottom knee bent","Lift top leg straight, slightly back","Toes forward, lower slowly"]],
+["slbridge","Glute bridge (progress to single-leg)",{s:3,r:12,rest:30},0,"Glutes, hamstrings","Builds glute strength; progress to single-leg when easy.",["Feet flat, drive hips up","Hold 2s at top","Progress: one foot lifted"]],
+["bandwalk","Lateral / monster band walks",{s:3,r:12,rest:30},0,"Glute medius, hip abductors","Hip control to reduce knee collapse when running.",["Band above knees or at ankles","Quarter squat, step sideways 12 each way","Monster: step diagonally forward"]],
+["wallsit","Wall sit",{s:3,r:1,rest:30,hold:30},0,"Quads (isometric)","Isometrics can calm knee pain and build quad strength.",["Back on wall, slide down","Knees ~60° (not too deep if painful)","Hold 30s per set"]],
+["stepdown","Eccentric step-downs",{s:3,r:10,rest:30},1,"Quads, glutes (eccentric)","Key patellofemoral exercise for control and strength.",["Stand on a step on one leg","Slowly lower other heel to the floor","Knee tracks over 2nd toe"]],
+["tke","Terminal knee extension",{s:3,r:15,rest:30},1,"VMO / quads","Strengthens final knee lockout.",["Band behind knee, anchored in front","Slightly bend, then straighten fully","Squeeze quad 2s"]],
+["slr","Straight-leg raise",{s:3,r:12,rest:30},1,"Quads, hip flexors","Quad strength without loading the knee.",["Lie on back, other knee bent","Tighten quad, lift straight leg to knee height","Lower slowly"]],
+["hiphike","Hip hikes",{s:3,r:12,rest:30},1,"Glute medius, lateral hip","Pelvis control for running.",["Stand on one leg on a step","Drop the free hip, then lift above level","Keep standing knee straight"]],
+].map(a=>{const o={id:a[0],name:a[1],uni:a[3],what:a[4],good:a[5],how:a[6]};if(typeof a[2]=="object")Object.assign(o,{rep:1,sets:a[2].s,reps:a[2].r,rest:a[2].rest,hold:a[2].hold||0});else o.dur=a[2];return o});
+const M=Object.fromEntries(S.map(s=>[s.id,s]));
+const TABS={
+ stretch:{ic:"🧘",lb:"Stretch",R:{"Full Body Unlock":["breath","catcow","thread","child","dog","lunge","halfsplit","wgs","9090","pigeon","frog","butterfly","fold","couch","calf","soleus","twist","pec","xbody","tricep","neck","baby","wall"],
+  "Post-ride 10 min":["lunge","couch","pigeon","halfsplit","calf","twist","pec"],"Post-run 10 min":["calf","soleus","halfsplit","couch","pigeon","fig4","lunge"]}},
+ warm:{ic:"🔥",lb:"Warm-up",R:{"Pre-run 8 min":["legswing","legswingside","lungerot","highknees","buttkicks","askips","hipcircles","anklerolls","bridge","calfraise"],
+  "Pre-ride 6 min":["hipcircles","catcow","wgs","legswing","squat","bridge"],"Pre-swim 6 min":["armcircles","armswings","thoracicrot","dislocates","scappush","streamline"]}},
+ rehab:{ic:"🩹",lb:"Massage/Rehab",note:"⚠️ Stop if you feel sharp pain. Foam rolling should feel like firm pressure, not pain. If knee pain persists or worsens, see a physio.",
+  R:{"Foam roll":["fr_quad","fr_tfl","fr_calf","fr_glute","fr_ham","fr_tspine"],"Massage ball":["ball_foot","ball_glute","ball_tfl"],
+  "Runner's knee program":["clam","sidelegraise","slbridge","bandwalk","wallsit","stepdown","tke","slr","hiphike"]}}};
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},SV=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let cfg=LS("cfg",{}),hist=LS("hist",[]),tab=LS("tab","stretch"),sel=LS("sel",{}),voice=LS("voice",true);
+if(!TABS[tab])tab="stretch";if(LS("light",false))document.body.classList.add("light");
+const C=(id,k)=>(cfg[id]&&cfg[id][k])||M[id][k];
+const cur=()=>{const r=sel[tab];return TABS[tab].R[r]?r:Object.keys(TABS[tab].R)[0]};
+const $=id=>document.getElementById(id),fmt=s=>s>=60?Math.floor(s/60)+":"+String(s%60).padStart(2,"0"):s+"s";
+let actx;function beep(f=880,ms=200){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.3,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}}
+function ding(){beep(880);setTimeout(()=>beep(1320,300),220);navigator.vibrate&&navigator.vibrate([200,100,200])}
+function say(t){if(!voice||!window.speechSynthesis)return;speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}
+const sides=id=>M[id].uni?2:1;
+function est(id){const s=M[id];return s.rep?C(id,"sets")*(sides(id)*(s.hold?C(id,"hold"):C(id,"reps")*3)+C(id,"rest")):C(id,"dur")*sides(id)}
+function streak(){const days=new Set(hist.map(h=>h.d));let n=0,d=new Date();if(!days.has(d.toDateString()))d.setDate(d.getDate()-1);while(days.has(d.toDateString())){n++;d.setDate(d.getDate()-1)}return n}
+const ct={},rc={};
+const inp=(id,k,w)=>`<input class="dur" style="width:${w||48}px" type="number" min="1" value="${C(id,k)}" data-c="${id}" data-k="${k}">`;
+function render(){const T=TABS[tab],r=cur(),ids=T.R[r];
+$("nav").innerHTML=Object.entries(TABS).map(([k,t])=>`<button class="${k==tab?'on':''}" data-t="${k}"><span>${t.ic}</span>${t.lb}</button>`).join("");
+$("tabs").innerHTML=Object.keys(T.R).map(x=>`<button class="${x==r?'on':''}" data-r="${x}">${x}</button>`).join("");
+$("sum").textContent=`${ids.length} items · ~${Math.round(ids.reduce((a,id)=>a+est(id),0)/60)} min`;
+$("stats").textContent=`🔥 Streak ${streak()} day(s) · ${hist.length} session(s) completed`;
+$("note").style.display=T.note?"block":"none";$("note").textContent=T.note||"";
+$("list").innerHTML=ids.map(id=>{const s=M[id],side=s.uni?" each side":"";
+if(!s.rep)return `<div class="card" id="c_${id}"><div class="n"><b>${s.name}</b><span class="mu">${inp(id,"dur",56)}s${side}</span></div>
+<span class="t" id="t_${id}">${fmt(C(id,"dur"))}</span><button data-p="${id}" id="p_${id}">▶</button><button data-x="${id}">↺</button><button data-i="${id}">ⓘ</button></div>`;
+const st=rc[id]||{set:1,rep:0};
+return `<div class="card" id="c_${id}"><div class="n"><b>${s.name}</b><span class="mu">${inp(id,"sets",40)}×${s.hold?inp(id,"hold")+"s hold":inp(id,"reps")}${side} · rest ${inp(id,"rest")}s</span>
+<div class="rc" id="r_${id}">Set ${st.set}/${C(id,"sets")}${s.hold?"":` · reps ${st.rep}/${C(id,"reps")}`}</div></div>
+<span class="t" id="t_${id}">${s.hold?fmt(C(id,"hold")):""}</span>${s.hold?`<button data-p="${id}" id="p_${id}">▶</button>`:`<button class="sm" data-plus="${id}">+1</button>`}<button class="sm" data-rest="${id}">Rest</button><button data-x="${id}">↺</button><button data-i="${id}">ⓘ</button></div>`}).join("")}
+function runT(id,secs,label,done){let c=ct[id];if(c&&c.iv){clearInterval(c.iv);c.iv=0;$("p_"+id)&&($("p_"+id).textContent="▶");return}
+c=ct[id]=c&&c.left>0&&c.label==label?c:{left:secs,label};$("p_"+id)&&($("p_"+id).textContent="⏸");
+const half=M[id].rep?-1:C(id,"dur");c.iv=setInterval(()=>{c.left--;if(M[id].uni&&!M[id].rep&&c.left==half&&secs>half){ding();say("Switch sides")}
+$("t_"+id)&&($("t_"+id).textContent=(label=="rest"?"Rest ":"")+fmt(c.left));if(c.left<=0){clearInterval(c.iv);delete ct[id];ding();$("p_"+id)&&($("p_"+id).textContent="▶");done&&done()}},1000)}
+function nextSet(id){const st=rc[id]||(rc[id]={set:1,rep:0});st.rep=0;if(st.set>=C(id,"sets")){$("c_"+id)&&$("c_"+id).classList.add("done");$("r_"+id)&&($("r_"+id).textContent="✓ All sets done");return true}st.set++;upd(id);return false}
+function upd(id){const st=rc[id];if($("r_"+id))$("r_"+id).textContent=`Set ${st.set}/${C(id,"sets")}`+(M[id].hold?"":` · reps ${st.rep}/${C(id,"reps")}`)}
+function reset(id){const c=ct[id];c&&clearInterval(c.iv);delete ct[id];delete rc[id];render()}
+function info(id){const s=M[id],q=encodeURIComponent(s.name.replace(/\(.*\)/,"").replace(/^(Foam roll|Massage ball): /,"$1 ").trim()+(s.rep?" exercise":" stretch")+" how to").replace(/%20/g,"+");
+const dose=s.rep?`${C(id,"sets")} sets × ${s.hold?C(id,"hold")+"s hold":C(id,"reps")+" reps"}${s.uni?" each side":""}, ${C(id,"rest")}s rest`:`${C(id,"dur")}s${s.uni?" each side":""}`;
+$("sh").innerHTML=`<h2 style="margin:0">${s.name}</h2><div class="mu">${dose}</div><h3>Targets</h3>${s.what}<h3>Good for</h3>${s.good}<h3>How to</h3><ul>${s.how.map(h=>`<li>${h}</li>`).join("")}</ul>
+${tab=="rehab"?'<p class="mu">Stop if sharp pain. See a physio if pain persists.</p>':''}<p><a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">▶ Watch video</a> · <a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" rel="noopener">🖼 Pictures</a></p><button style="width:100%" id="cl">Close</button>`;$("md").classList.add("show")}
+$("md").onclick=e=>{if(e.target.id=="md"||e.target.id=="cl")$("md").classList.remove("show")};
+document.addEventListener("click",e=>{const d=e.target.closest("button")?.dataset;if(!d)return;
+if(d.t){tab=d.t;SV("tab",tab);render();scrollTo(0,0)}else if(d.r){sel[tab]=d.r;SV("sel",sel);render()}
+else if(d.p){const s=M[d.p];s.rep?runT(d.p,C(d.p,"hold")*sides(d.p),"hold",()=>{say("Set done. Rest.");nextSet(d.p)||runT(d.p,C(d.p,"rest"),"rest",()=>say("Go"))}):runT(d.p,C(d.p,"dur")*sides(d.p),"hold")}
+else if(d.x)reset(d.x);else if(d.i)info(d.i);
+else if(d.plus){const id=d.plus,st=rc[id]||(rc[id]={set:1,rep:0});st.rep++;navigator.vibrate&&navigator.vibrate(30);beep(700,50);
+ if(st.rep>=C(id,"reps")){upd(id);ding();if(!nextSet(id)){say("Rest");runT(id,C(id,"rest"),"rest",()=>say("Go"))}}else upd(id)}
+else if(d.rest){if(ct[d.rest])clearInterval(ct[d.rest].iv),delete ct[d.rest];runT(d.rest,C(d.rest,"rest"),"rest")}});
+document.addEventListener("change",e=>{const id=e.target.dataset.c,k=e.target.dataset.k;if(id){(cfg[id]=cfg[id]||{})[k]=Math.max(1,+e.target.value||M[id][k]);SV("cfg",cfg);render()}});
+$("theme").onclick=()=>SV("light",document.body.classList.toggle("light"));
+// guided mode. step kinds: ready(5s), hold(t), reps(manual), rest(t)
+let steps=[],si=0,left=0,paused=false,tick=0,lock=null,rname="";
+function build(){steps=[];TABS[tab].R[cur()].forEach(id=>{const s=M[id],sd=s.uni?["Left side","Right side"]:[""];
+ if(!s.rep)sd.forEach(side=>{steps.push({id,side,k:"ready",t:5});steps.push({id,side,k:"hold",t:C(id,"dur")})});
+ else{const n=C(id,"sets");steps.push({id,side:"",k:"ready",t:5});for(let i=1;i<=n;i++){sd.forEach(side=>{steps.push(s.hold?{id,side,k:"hold",t:C(id,"hold"),set:i}:{id,side,k:"reps",set:i});
+  if(s.uni&&side=="Left side")steps.push({id,side:"Right side",k:"ready",t:5,set:i})});if(i<n)steps.push({id,side:"",k:"rest",t:C(id,"rest"),set:i})}}})}
+async function wl(on){try{if(on&&navigator.wakeLock)lock=await navigator.wakeLock.request("screen");else if(lock){lock.release();lock=null}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="visible"&&$("ov").classList.contains("show"))wl(true)});
+function show(){const st=steps[si],s=M[st.id];left=st.t||0;const ids=TABS[tab].R[rname];
+$("oname").textContent=s.name;const setTxt=st.set?`Set ${st.set}/${C(st.id,"sets")} · `:"";
+$("oside").textContent=st.k=="ready"?"Get ready"+(st.side?" · "+st.side:""):st.k=="rest"?"Rest":setTxt+(st.k=="reps"?`${C(st.id,"reps")} reps`:"")+(st.side?" "+st.side:"");
+$("ostep").textContent=`${ids.indexOf(st.id)+1} / ${ids.length}`;
+const nx=steps.slice(si+1).find(x=>x.k!="ready"&&x.k!="rest");$("onext").textContent=nx?"Next: "+M[nx.id].name+(nx.side?" ("+nx.side+")":""):"Last one!";
+$("pb").style.width=(si/steps.length*100)+"%";$("otime").textContent=st.k=="reps"?"✋":left;$("dn").style.display=st.k=="reps"?"block":"none";
+if(st.k=="ready")say(steps[si-1]&&steps[si-1].id==st.id?"Switch to the "+st.side:"Next: "+s.name+(st.side?", "+st.side:""));
+if(st.k=="reps")say(`${C(st.id,"reps")} reps${st.side?", "+st.side:""}. Tap done when finished.`);if(st.k=="rest")say("Rest")}
+function start(){build();rname=cur();si=0;paused=false;$("pp").textContent="⏸";$("ov").classList.add("show");wl(true);beep(660,100);show();clearInterval(tick);
+tick=setInterval(()=>{if(paused||steps[si].k=="reps")return;left--;$("otime").textContent=Math.max(left,0);
+if(left<=3&&left>0&&steps[si].k!="hold")beep(520,80);if(left<=0){if(steps[si].k=="hold")ding();next()}},1000)}
+function next(){si++;if(si>=steps.length)return finish();show()}
+function finish(){clearInterval(tick);hist.push({d:new Date().toDateString(),r:rname});SV("hist",hist);say("Routine complete. Great work.");$("pb").style.width="100%";$("oname").textContent="Done! 🎉";$("oside").textContent="";$("otime").textContent="✓";$("dn").style.display="none";$("onext").textContent=`Streak: ${streak()} day(s)`;wl(false);render()}
+$("go").onclick=start;$("dn").onclick=()=>{ding();next()};$("pp").onclick=()=>{paused=!paused;$("pp").textContent=paused?"▶":"⏸"};
+$("sk").onclick=()=>{if(si<steps.length)next()};$("bk").onclick=()=>{let j=si-1;while(j>0&&steps[j].k!="ready")j--;si=Math.max(0,j);show()};
+$("ex").onclick=()=>{clearInterval(tick);$("ov").classList.remove("show");wl(false);window.speechSynthesis&&speechSynthesis.cancel()};
+$("vc").textContent=voice?"🔊 Voice on":"🔇 Voice off";$("vc").onclick=()=>{voice=!voice;SV("voice",voice);$("vc").textContent=voice?"🔊 Voice on":"🔇 Voice off"};
+render();
+</script></body></html>
