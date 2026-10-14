@@ -258,7 +258,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 15 Oct 2026 · 12 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 15 Oct 2026 · 13 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -309,7 +309,7 @@
 
 <script>
 const STORAGE_KEY = 'ff-canteen-tick-2026-10-14-v2';
-const LAST_PULL = 'Wed 14 Oct 2026, 2:40pm AEDT'; // update on every Bopple pull
+const LAST_PULL = 'Wed 14 Oct 2026, 3:05pm AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
@@ -421,6 +421,10 @@ const PEOPLE = [
   ]},
   { id:'26119789', orderId:'26119789', dockets:['dockets/26119789.png'], name:"Layla & Sophia", parent:"Kelly Keegan", pickup:"3:15pm", orderNotes:"Layla and Sophia", items:[
     { id:"26119789-juicies-tube-wildberry-0", qty:2, name:"Juicies Tube (Wildberry)", lineNotes:"Layla and Sophia" },
+  ]},
+  { id:'26134827', orderId:'26134827', dockets:['dockets/26134827.png'], name:"Catarina & Antoine", parent:"Camila Ito Skaf", pickup:"ASAP \u00b7 placed Wed 14 Oct 2026, 02:47pm", orderNotes:"Catarina and Antoine", items:[
+    { id:"26134827-acai-cup-0", qty:2, name:"Acai Cup" },
+    { id:"26134827-pasta-napolitana-sauce-whole-wheat-1", qty:2, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
   ]},
 ];
 expandPeople(PEOPLE);
