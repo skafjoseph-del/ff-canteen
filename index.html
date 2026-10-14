@@ -258,7 +258,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 15 Oct 2026 · 10 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 15 Oct 2026 · 12 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -308,8 +308,8 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-10-14-v1';
-const LAST_PULL = 'Wed 14 Oct 2026, 2:33pm AEDT'; // update on every Bopple pull
+const STORAGE_KEY = 'ff-canteen-tick-2026-10-14-v2';
+const LAST_PULL = 'Wed 14 Oct 2026, 2:40pm AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
@@ -328,7 +328,8 @@ function productDefaultService(name){
   const n = String(name || '').toLowerCase();
   if (n.includes('banana bread')) return 'recess';
   if (n.includes('acai')) return 'recess';
-  if (n.includes('nudi')) return 'recess';
+  if (n.includes('nudi')) return 'recess'; // also Nudie Juice
+  if (n.includes('juicies')) return 'recess';
   if (n.includes('buckwheat')) return 'recess';
   if (n.includes('parfait')) return 'recess';
   if (n.includes('tempeh')) return 'recess';
@@ -367,6 +368,7 @@ const PEOPLE = [
   ]},
   { id:'26129227', orderId:'26129227', dockets:['dockets/26129227.png'], name:"Maja Rees (Kindy)", parent:"Joel Rees", pickup:"ASAP \u00b7 placed Wed 14 Oct 2026, 09:58am", orderNotes:"Maja - Kindy", items:[
     { id:"26129227-nacho-bowl-0", qty:1, name:"Nacho Bowl" },
+    { id:"26129227-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)" },
   ]},
   { id:'26125228', orderId:'26125228', dockets:['dockets/26125228.png'], name:"Oscar Roki", parent:"Luke Roki", pickup:"11:00", orderNotes:"Oscar Roki", items:[
     { id:"26125228-loco-love-strawberry-0", qty:1, name:"Loco Love (Strawberry)" },
@@ -388,6 +390,7 @@ const PEOPLE = [
     { id:"26124167-loco-love-chewy-caramel-3", qty:1, name:"Loco Love (Chewy Caramel)", lineNotes:"Zara", child:"Zara" },
     { id:"26124167-nacho-bowl-4", qty:1, name:"Nacho Bowl", lineNotes:"Ezra", child:"Ezra" },
     { id:"26124167-pasta-napolitana-sauce-whole-wheat-5", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Zara", child:"Zara" },
+    { id:"26124167-juicies-tube-lemonade-6", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Zara", child:"Zara" },
   ]},
   { id:'26122921', orderId:'26122921', dockets:['dockets/26122921.png'], name:"Chloe", parent:"Karina Mora", pickup:"10:00", items:[
     { id:"26122921-gf-banana-bread-0", qty:2, name:"GF Banana Bread", child:"Chloe" },
@@ -400,13 +403,24 @@ const PEOPLE = [
     { id:"26121502-pies-creamy-mushroom-3", qty:2, name:"Pies (Creamy Mushroom)", lineNotes:"Both for Hannah stafford", child:"Hannah" },
     { id:"26121502-sausage-roll-4", qty:1, name:"Sausage Roll", lineNotes:"Koen Stafford lunch", child:"Koen" },
     { id:"26121502-tempeh-chips-sea-weed-5", qty:1, name:"Tempeh Chips (Sea Weed)", lineNotes:"Hannah stafford", child:"Hannah" },
+    { id:"26121502-juicies-tube-lemonade-6", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Koen Stafford lunch", child:"Koen" },
   ]},
   { id:'26120333', orderId:'26120333', dockets:['dockets/26120333.png'], name:"Hannah Deves", parent:"Alexis Deves", pickup:"10:30", items:[
     { id:"26120333-sausage-roll-0", qty:1, name:"Sausage Roll", lineNotes:"Hannah Deves - Toronto" },
+    { id:"26120333-juicies-tube-lemonade-1", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah Deves - Toronto" },
   ]},
   { id:'26119671', orderId:'26119671', dockets:['dockets/26119671.png'], name:"Letitia Campbell (no child named)", parent:"Letitia Campbell", pickup:"ASAP \u00b7 placed Tue 13 Oct 2026, 02:49pm", items:[
     { id:"26119671-refried-beans-toastie-0", qty:1, name:"Refried Beans Toastie" },
     { id:"26119671-sausage-roll-1", qty:1, name:"Sausage Roll" },
+    { id:"26119671-juicies-tube-wildberry-2", qty:2, name:"Juicies Tube (Wildberry)" },
+  ]},
+  { id:'26134365', orderId:'26134365', dockets:['dockets/26134365.png'], name:"Belinda Muller (no child named)", parent:"Belinda Muller", pickup:"9:00", items:[
+    { id:"26134365-toasties-tomato-cheese-0", qty:1, name:"Toasties (Tomato Cheese)" },
+    { id:"26134365-fresh-fruit-mix-1", qty:1, name:"Fresh Fruit Mix" },
+    { id:"26134365-nudie-juice-tropical-2", qty:1, name:"Nudie Juice (Tropical)" },
+  ]},
+  { id:'26119789', orderId:'26119789', dockets:['dockets/26119789.png'], name:"Layla & Sophia", parent:"Kelly Keegan", pickup:"3:15pm", orderNotes:"Layla and Sophia", items:[
+    { id:"26119789-juicies-tube-wildberry-0", qty:2, name:"Juicies Tube (Wildberry)", lineNotes:"Layla and Sophia" },
   ]},
 ];
 expandPeople(PEOPLE);
