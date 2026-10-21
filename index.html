@@ -258,7 +258,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 22 Oct 2026 · 8 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 22 Oct 2026 · 11 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -309,7 +309,7 @@
 
 <script>
 const STORAGE_KEY = 'ff-canteen-tick-2026-10-21-v1';
-const LAST_PULL = 'Wed 21 Oct 2026, 12:21pm AEDT'; // update on every Bopple pull
+const LAST_PULL = 'Thu 22 Oct 2026, 8:00am AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
@@ -406,6 +406,24 @@ const PEOPLE = [
     { id:"26254264-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)", lineNotes:"Mario", child:"Mario" },
     { id:"26254264-pasta-napolitana-sauce-whole-wheat-2", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Abi", child:"Abigail" },
     { id:"26254264-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"No sauce Mario", child:"Mario" },
+  ]},
+  { id:'26271085', orderId:'26271085', dockets:[], name:"Belinda Muller", parent:"Belinda Muller", pickup:"9:00am", items:[
+    { id:"26271085-hemp-cheese-tomato-toastie-0", qty:1, name:"Hemp Cheese & Tomato Toastie" },
+    { id:"26271085-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)" },
+    { id:"26271085-nudi-juice-200ml-tropical-2", qty:1, name:"Nudi Juice 200ml (Tropical)" },
+  ]},
+  { id:'26270743', orderId:'26270743', dockets:[], name:"Catarina & Antoine", parent:"Camila Ito Skaf", pickup:"11:00am", orderNotes:"Catarina and Antoine", items:[
+    { id:"26270743-loco-love-strawberry-0", qty:1, name:"Loco Love (Strawberry)", special:"$0 order (staff complimentary discount)" },
+    { id:"26270743-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)", special:"$0 order (staff complimentary discount)" },
+    { id:"26270743-sausage-roll-2", qty:2, name:"Sausage Roll", special:"$0 order (staff complimentary discount)" },
+  ]},
+  { id:'26270577', orderId:'26270577', dockets:[], name:"Bella & Bindi Smith", parent:"Alex Wilks", pickup:"ASAP", orderNotes:"Bella and bindi smith", items:[
+    { id:"26270577-chia-berry-cup-200ml-0", qty:1, name:"Chia Berry Cup 200ml" },
+    { id:"26270577-flavoured-milks-coconut-no-sugar-added-strawberry-1", qty:1, name:"Flavoured Milks (Coconut & No Sugar Added) (Strawberry)" },
+    { id:"26270577-hemp-cheese-tomato-toastie-2", qty:1, name:"Hemp Cheese & Tomato Toastie" },
+    { id:"26270577-loco-love-strawberry-3", qty:1, name:"Loco Love (Strawberry)" },
+    { id:"26270577-nacho-bowl-4", qty:1, name:"Nacho Bowl" },
+    { id:"26270577-nudi-juice-200ml-tropical-5", qty:1, name:"Nudi Juice 200ml (Tropical)" },
   ]},
 ];
 expandPeople(PEOPLE);
@@ -595,7 +613,7 @@ function render(){
         const obsVal = observations[g.id] || '';
     const obsClass = obsVal.trim() ? 'has-text' : '';
     const orderId = g.orderId || g.id;
-    const dockets = (g.dockets && g.dockets.length) ? g.dockets : (orderId ? ['dockets/' + orderId + '.png'] : []);
+    const dockets = Array.isArray(g.dockets) ? g.dockets : (orderId ? ['dockets/' + orderId + '.png'] : []); // dockets:[] = no screenshot
     const docketBtn = dockets.length
       ? `<button type="button" class="btn-docket" data-dockets="${escapeHtml(JSON.stringify(dockets))}" data-docket-name="${escapeHtml(g.name)}">View docket</button>`
       : '';
