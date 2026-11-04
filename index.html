@@ -258,7 +258,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 5 Nov 2026 · 8 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 5 Nov 2026 · 10 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -309,7 +309,7 @@
 
 <script>
 const STORAGE_KEY = 'ff-canteen-tick-2026-11-04-v1';
-const LAST_PULL = 'Wed 4 Nov 2026, 12:18pm AEDT'; // update on every Bopple pull
+const LAST_PULL = 'Wed 4 Nov 2026, 3:04pm AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
@@ -363,6 +363,14 @@ function expandPeople(people){
   }
 }
 const PEOPLE = [
+  { id:'26537094', orderId:'26537094', dockets:['dockets/26537094.png'], name:"Diane Lapuz Hope (order)", parent:"Diane Lapuz Hope", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 01:57pm", items:[
+    { id:"26537094-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
+    { id:"26537094-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
+  ]},
+  { id:'26536592', orderId:'26536592', dockets:['dockets/26536592.png'], name:"Maja Rees (Kindy)", parent:"Joel Rees", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 01:27pm", orderNotes:"Maja - kindy", items:[
+    { id:"26536592-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)", child:"Maja" },
+    { id:"26536592-nacho-bowl-1", qty:1, name:"Nacho Bowl", child:"Maja" },
+  ]},
   { id:'26534212', orderId:'26534212', dockets:['dockets/26534212.png'], name:"Catarina & Antoine", parent:"Camila Ito Skaf", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 11:36am", orderNotes:"Catarina and Antoine", items:[
     { id:"26534212-fruit-salad-0", qty:1, name:"Fruit Salad" },
     { id:"26534212-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)" },
