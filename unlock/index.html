@@ -126,10 +126,13 @@ const S=[["breath","Diaphragmatic breathing (child's pose)",60,false,"Diaphragm,
 ["slbridge","Glute bridge (progress to single-leg)",{s:3,r:12,rest:30},false,"Glutes, hamstrings","Builds glute strength; progress to single-leg when easy.",["Feet flat, drive hips up","Hold 2s at top","Progress: one foot lifted"]],
 ["bandwalk","Lateral / monster band walks",{s:3,r:12,rest:30},false,"Glute medius, hip abductors","Hip control to reduce knee collapse when running.",["Band above knees or at ankles","Quarter squat, step sideways 12 each way","Monster: step diagonally forward"]],
 ["wallsit","Wall sit",{s:3,r:1,rest:30,hold:30},false,"Quads (isometric)","Isometrics can calm knee pain and build quad strength.",["Back on wall, slide down","Knees ~60° (not too deep if painful)","Hold 30s per set"]],
-["stepdown","Eccentric step-downs",{s:3,r:10,rest:30},true,"Quads, glutes (eccentric)","Key patellofemoral exercise for control and strength.",["Stand on a step on one leg","Slowly lower other heel to the floor","Knee tracks over 2nd toe"]],
+["stepdown","Eccentric step-downs",{s:3,r:10,rest:30},true,"Quads, glutes (eccentric)","Key patellofemoral exercise for control and strength.",["Stand on a step on one leg","Slowly lower other heel to the floor","Knee tracks over 2nd toe","Stop if you feel sharp pain"]],
 ["tke","Terminal knee extension",{s:3,r:15,rest:30},true,"VMO / quads","Strengthens final knee lockout.",["Band behind knee, anchored in front","Slightly bend, then straighten fully","Squeeze quad 2s"]],
 ["slr","Straight-leg raise",{s:3,r:12,rest:30},true,"Quads, hip flexors","Quad strength without loading the knee.",["Lie on back, other knee bent","Tighten quad, lift straight leg to knee height","Lower slowly"]],
 ["hiphike","Hip hikes",{s:3,r:12,rest:30},true,"Glute medius, lateral hip","Pelvis control for running.",["Stand on one leg on a step","Drop the free hip, then lift above level","Keep standing knee straight"]],
+["clam12","Clamshells",{s:3,r:12,rest:30},true,"Glute medius","2–3 sets of 12 each side. Hip stability so the kneecap tracks during a mild front-of-knee ache.",["Side-lying, knees bent about 45°","Feet together, open the top knee","Don't roll the pelvis back","2 sets is enough on a sore day. Stop if you feel sharp pain"]],
+["slsts","Single-leg sit-to-stand (chair)",{s:2,r:8,rest:30},true,"Quads, glutes","Load-tolerant strength for a mild ache at the front of the knee.",["Sit tall on a chair. One foot flat, the other hovering","Stand up on the planted leg. Knee tracks over the second toe","Sit back down slowly. Use the free foot or your hands if you need to","Stop if you feel sharp pain"]],
+["wallsit_opt","Wall sit / shallow squat hold (optional)",{s:3,r:1,rest:30,hold:30},false,"Quads (isometric)","Optional fourth. A shallow hold can settle a mild front-of-knee ache. 20–30 seconds is enough.",["Back on the wall, feet a step forward","Slide to a shallow bend — knees nearer 60° than a deep squat","Or hover just above a chair in a shallow squat","Hold 20–30s. The timer is 30s — stand up early if the kneecap pinches"]],
 ["latside","Lat stretch (side bend)",30,true,"Lats, side body","Lengthens the lat after freestyle so the next stroke can reach long.",["Stand or kneel tall, one arm overhead","Lean gently to the opposite side","Keep the ribs long and don't crunch"]],
 ["standquad","Standing quad stretch",30,true,"Quadriceps","Loosens the front thigh after the bike and run without kneeling on the knee.",["Hold a wall or chair","Bend one knee and catch the ankle or shin lightly","Knee points down. Don't crank the heel in — stop if the kneecap pinches"]],
 ["kneelhip","Kneeling hip flexor (gentle)",30,true,"Hip flexors, psoas","Opens the hip after the bike. Stay tall and shallow so the front knee stays quiet.",["Pad the back knee. Use a short stance","Tuck the pelvis a little and squeeze the back glute","Don't lunge deep or let the front knee shoot past the toes"]],
@@ -154,7 +157,9 @@ const TABS={
  warm:{ic:"🔥",lb:"Warm-up",R:{"Pre-run 8 min":["legswing","legswingside","lungerot","highknees","buttkicks","askips","hipcircles","anklerolls","bridge","calfraise"],
   "Pre-ride 6 min":["hipcircles","catcow","wgs","legswing","squat","bridge"],"Pre-swim 6 min":["armcircles","armswings","thoracicrot","dislocates","scappush","streamline"]}},
  rehab:{ic:"🩹",lb:"Massage/Rehab",note:"⚠️ Stop if you feel sharp pain. Foam rolling should feel like firm pressure, not pain. If knee pain persists or worsens, see a physio.",
+  notes:{"Knee trio (mild PF)":"For a mild ache at the front of the knee that shows up after about 7 km of running. Do the first three — eccentric step-downs, clamshells, and single-leg sit-to-stand — 2–3× a week. Wall sit / shallow squat hold is optional. Step-downs 3×10 each side, clams 2–3×12 each side, sit-to-stand 2×8 each side, wall sit 3×20–30s. Stop if sharp pain. Locking, swelling, or the knee giving way needs a physio. The fuller Runner's knee list is still the next routine."},
   R:{"Foam roll":["fr_quad","fr_tfl","fr_calf","fr_glute","fr_ham","fr_tspine"],"Massage ball":["ball_foot","ball_glute","ball_tfl"],
+  "Knee trio (mild PF)":["stepdown","clam12","slsts","wallsit_opt"],
   "Runner's knee program":["clam","sidelegraise","slbridge","bandwalk","wallsit","stepdown","tke","slr","hiphike"]}}};
 const LS=function(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}, SV=function(k,v){localStorage.setItem(k,JSON.stringify(v))};
 let cfg=LS("cfg",{}), hist=LS("hist",[]), tab=LS("tab","stretch"), sel=LS("sel",{}), voice=LS("voice",true);
@@ -436,6 +441,7 @@ ball_foot:function(){return fig([70,28],[[70,40,70,86],[70,50,48,66],[70,86,58,1
 ball_glute:function(){return fig([96,36],[[96,48,100,74],[100,74,70,104],[100,74,136,100],[136,100,150,122],[70,104,62,124]],"",ball(108,112,14))},
 ball_tfl:function(){return fig([132,52],[[148,64,80,74],[80,74,52,100],[148,56,166,42]],"",ball(74,102,12))},
 clam:function(){return fig([130,46],[[146,58,78,74],[78,74,58,108],[78,74,108,96,1],[58,108,40,116],[108,110,126,124]],"",band(62,104,100,96))},
+slsts:function(){return fig([78,24],[[78,36,82,70],[82,70,70,124],[82,70,122,94],[122,94,106,68,1],[78,48,46,64],[78,48,110,40]],box(108,86,58,40),"")},
 sidelegraise:function(){return fig([132,48],[[148,60,70,78],[70,78,52,112],[70,78,118,46,1],[52,112,40,124]],"","")},
 slbridge:function(){return fig([42,98],[[54,98,100,70,1],[100,70,136,98],[136,98,154,122],[100,74,118,42],[118,42,136,36]],"","")},
 bandwalk:function(){return fig([78,26],[[78,38,86,68],[86,68,64,100],[64,100,58,124],[86,68,116,102],[116,102,128,124],[78,48,56,62],[86,48,112,40]],"",band(70,96,110,98)+arr("M132,78 l16,0"))},
@@ -451,6 +457,8 @@ standham:function(){return fig([52,46],[[70,78,44,52],[70,86,62,124],[70,86,142,
 itblean:function(){return fig([64,30],[[74,42,62,90],[62,50,34,46],[74,90,98,124],[74,90,50,124,1]],wall(22),arr("M88,78 q16,4 10,16"))},
 gpigeon:function(){return fig([56,40],[[78,108,120,114],[86,98,168,94],[86,96,64,50]],cush(64,100,42,16),"")}
 };
+DRAWS.clam12=DRAWS.clam;
+DRAWS.wallsit_opt=DRAWS.wallsit;
 function poseFig(){
   return fig([40,78],[[52,86,132,86],[132,86,156,112],[100,86,124,58],[124,58,150,46,1],[86,86,70,116],[70,116,96,124]],"","");
 }
@@ -470,7 +478,7 @@ function info(id){
   var s=M[id];
   var q=encodeURIComponent(s.name.replace(/\(.*\)/,"").replace(/^(Foam roll|Massage ball): /,"$1 ").trim()+(s.rep?" exercise":" stretch")+" how to").replace(/%20/g,"+");
   var dose=s.rep?(C(id,"sets")+" sets × "+(s.hold?C(id,"hold")+"s hold":C(id,"reps")+" reps")+(s.perSide?" each side":"")+", "+C(id,"rest")+"s rest"):(C(id,"dur")+"s"+(s.perSide?" each side":""));
-  $("sh").innerHTML='<h2 style="margin:0">'+s.name+'</h2><div class="mu">'+dose+'</div><div class="ill">'+illustration(s)+'</div><h3>Targets</h3>'+s.what+'<h3>Good for</h3>'+s.good+'<h3>How to</h3><ul>'+s.how.map(function(h){return "<li>"+h+"</li>"}).join("")+'</ul>'+(tab=="rehab"?'<p class="mu">Stop if sharp pain. See a physio if pain persists.</p>':"")+'<p><a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">▶ Watch video</a> · <a href="https://www.google.com/search?tbm=isch&q='+q+'" target="_blank" rel="noopener">🖼 Pictures</a></p><button style="width:100%" id="cl">Close</button>';
+  $("sh").innerHTML='<h2 style="margin:0">'+s.name+'</h2><div class="mu">'+dose+'</div><div class="ill">'+illustration(s)+'</div><h3>Targets</h3>'+s.what+'<h3>Good for</h3>'+s.good+'<h3>How to</h3><ul>'+s.how.map(function(h){return "<li>"+h+"</li>"}).join("")+'</ul>'+(tab=="rehab"?'<p class="mu">Stop if sharp pain. Locking, swelling, or the knee giving way needs a physio.</p>':"")+'<p><a href="https://www.youtube.com/results?search_query='+q+'" target="_blank" rel="noopener">▶ Watch video</a> · <a href="https://www.google.com/search?tbm=isch&q='+q+'" target="_blank" rel="noopener">🖼 Pictures</a></p><button style="width:100%" id="cl">Close</button>';
   $("md").classList.add("show");
 }
 $("md").onclick=function(e){if(e.target.id=="md"||e.target.id=="cl") $("md").classList.remove("show")};
