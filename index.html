@@ -258,7 +258,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 5 Nov 2026 · 10 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 12 Nov 2026 · 11 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -308,8 +308,8 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-11-04-v1';
-const LAST_PULL = 'Wed 4 Nov 2026, 3:04pm AEDT'; // update on every Bopple pull
+const STORAGE_KEY = 'ff-canteen-tick-2026-11-11-v1';
+const LAST_PULL = 'Wed 11 Nov 2026, 3:11pm AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
@@ -363,55 +363,59 @@ function expandPeople(people){
   }
 }
 const PEOPLE = [
-  { id:'26537094', orderId:'26537094', dockets:['dockets/26537094.png'], name:"Diane Lapuz Hope (order)", parent:"Diane Lapuz Hope", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 01:57pm", items:[
-    { id:"26537094-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
-    { id:"26537094-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
+  { id:'26674724', orderId:'26674724', dockets:['dockets/26674724.png'], name:"Catarina & Antoine", parent:"Camila Ito Skaf", pickup:"ASAP \u00b7 placed Wed 11 Nov 2026, 2:26pm", orderNotes:"Catarina and Antoine", items:[
+    { id:"26674724-acai-cup-0", qty:2, name:"Acai Cup" },
+    { id:"26674724-pasta-napolitana-sauce-whole-wheat-1", qty:2, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
   ]},
-  { id:'26536592', orderId:'26536592', dockets:['dockets/26536592.png'], name:"Maja Rees (Kindy)", parent:"Joel Rees", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 01:27pm", orderNotes:"Maja - kindy", items:[
-    { id:"26536592-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)", child:"Maja" },
-    { id:"26536592-nacho-bowl-1", qty:1, name:"Nacho Bowl", child:"Maja" },
+  { id:'26664469', orderId:'26664469', dockets:['dockets/26664469.png'], name:"Hannah Deves", parent:"Alexis Deves", pickup:"10:00am", items:[
+    { id:"26664469-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah Deves - Toronto" },
+    { id:"26664469-sausage-roll-1", qty:1, name:"Sausage Roll", lineNotes:"Hannah Deves - Toronto" },
   ]},
-  { id:'26534212', orderId:'26534212', dockets:['dockets/26534212.png'], name:"Catarina & Antoine", parent:"Camila Ito Skaf", pickup:"ASAP \u00b7 placed Wed 4 Nov 2026, 11:36am", orderNotes:"Catarina and Antoine", items:[
-    { id:"26534212-fruit-salad-0", qty:1, name:"Fruit Salad" },
-    { id:"26534212-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)" },
-    { id:"26534212-loco-love-chewy-caramel-2", qty:1, name:"Loco Love (Chewy Caramel)" },
-    { id:"26534212-pasta-napolitana-sauce-whole-wheat-3", qty:2, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
+  { id:'26664393', orderId:'26664393', dockets:['dockets/26664393.png'], name:"Ariana & Emilia", parent:"Natasha Curnow", pickup:"11:00am", orderNotes:"Ariana and Emilia TAS Canteen order", items:[
+    { id:"26664393-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Ariana recess", child:"Ariana" },
+    { id:"26664393-gf-buckwheat-choc-chip-cookie-1", qty:1, name:"GF Buckwheat Choc Chip Cookie", lineNotes:"Emilia recess", child:"Emilia" },
+    { id:"26664393-pasta-napolitana-sauce-whole-wheat-2", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Ariana lunch", child:"Ariana" },
+    { id:"26664393-sausage-roll-3", qty:1, name:"Sausage Roll", lineNotes:"Emilia lunch", child:"Emilia" },
   ]},
-  { id:'26528260', orderId:'26528260', dockets:['dockets/26528260.png'], name:"Ariana & Emilia", parent:"Natasha Curnow", pickup:"11:00am", orderNotes:"Ariana and Emilia Curnow TAS Canteen", items:[
-    { id:"26528260-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Ariana recess", child:"Ariana" },
-    { id:"26528260-juicies-tube-lemonade-1", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Emilia lunch", child:"Emilia" },
-    { id:"26528260-loco-love-double-chocolate-2", qty:1, name:"Loco Love (Double Chocolate)", lineNotes:"Emilia recess", child:"Emilia" },
-    { id:"26528260-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Ariana lunch", child:"Ariana" },
+  { id:'26664096', orderId:'26664096', dockets:['dockets/26664096.png'], name:"Zara & Ezra", parent:"Kristina Stafford", pickup:"9:00am", items:[
+    { id:"26664096-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Ezra", child:"Ezra" },
+    { id:"26664096-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Zara", child:"Zara" },
+    { id:"26664096-juicies-tube-wildberry-2", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Ezra", child:"Ezra" },
+    { id:"26664096-loco-love-chewy-caramel-3", qty:1, name:"Loco Love (Chewy Caramel)", lineNotes:"Zara", child:"Zara" },
+    { id:"26664096-pies-creamy-mushroom-4", qty:1, name:"Pies (Creamy Mushroom)", lineNotes:"Zara", child:"Zara" },
   ]},
-  { id:'26527227', orderId:'26527227', dockets:['dockets/26527227.png'], name:"Grace & Eloise", parent:"Melissa Whitson", pickup:"11:00am", items:[
-    { id:"26527227-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"No granola please" },
-    { id:"26527227-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)" },
-    { id:"26527227-loco-love-chewy-caramel-2", qty:1, name:"Loco Love (Chewy Caramel)" },
-    { id:"26527227-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
+  { id:'26663700', orderId:'26663700', dockets:['dockets/26663700.png'], name:"Abigail & Mario", parent:"Karin Gonzalez", pickup:"1:00pm", items:[
+    { id:"26663700-loco-love-strawberry-0", qty:1, name:"Loco Love (Strawberry)", lineNotes:"Abigail P", child:"Abigail" },
+    { id:"26663700-loco-love-chewy-caramel-1", qty:1, name:"Loco Love (Chewy Caramel)", lineNotes:"Mario", child:"Mario" },
+    { id:"26663700-pasta-napolitana-sauce-whole-wheat-2", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"No sauce Mario P", child:"Mario" },
+    { id:"26663700-refried-beans-toastie-3", qty:1, name:"Refried Beans Toastie", lineNotes:"Abigail P", child:"Abigail" },
   ]},
-  { id:'26526085', orderId:'26526085', dockets:['dockets/26526085.png'], name:"Layla & Sophia", parent:"Kelly Keegan", pickup:"9:00am", items:[
-    { id:"26526085-juicies-tube-wildberry-0", qty:2, name:"Juicies Tube (Wildberry)", lineNotes:"Layla and Sophia", child:"Layla & Sophia" },
+  { id:'26662804', orderId:'26662804', dockets:['dockets/26662804.png'], name:"Diane Lapuz Hope (order)", parent:"Diane Lapuz Hope", pickup:"9:00am", items:[
+    { id:"26662804-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
+    { id:"26662804-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
   ]},
-  { id:'26525292', orderId:'26525292', dockets:['dockets/26525292.png'], name:"Hannah & Koen", parent:"Bronwyn Stafford", pickup:"10:00am", orderNotes:"Stafford", items:[
-    { id:"26525292-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Koen lunch", child:"Koen" },
-    { id:"26525292-gf-banana-bread-1", qty:1, name:"GF Banana Bread", lineNotes:"Koen recess", child:"Koen" },
-    { id:"26525292-hemp-cheese-tomato-toastie-2", qty:1, name:"Hemp Cheese & Tomato Toastie", lineNotes:"Hannah for recess", child:"Hannah" },
-    { id:"26525292-juicies-tube-lemonade-3", qty:2, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah and Koen for recess", child:"Hannah & Koen" },
-    { id:"26525292-pies-creamy-mushroom-4", qty:1, name:"Pies (Creamy Mushroom)", lineNotes:"Hannah", child:"Hannah" },
-    { id:"26525292-tempeh-chips-sea-salt-5", qty:1, name:"Tempeh Chips (Sea Salt)", lineNotes:"Hannah - recess", child:"Hannah" },
+  { id:'26662654', orderId:'26662654', dockets:['dockets/26662654.png'], name:"Tiana & Zion", parent:"Letitia Campbell", pickup:"11:00am", items:[
+    { id:"26662654-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
+    { id:"26662654-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)" },
+    { id:"26662654-refried-beans-toastie-2", qty:1, name:"Refried Beans Toastie" },
+    { id:"26662654-sausage-roll-3", qty:2, name:"Sausage Roll" },
   ]},
-  { id:'26525283', orderId:'26525283', dockets:['dockets/26525283.png'], name:"Chloe", parent:"Karina Mora", pickup:"10:00am", items:[
-    { id:"26525283-acai-cup-0", qty:1, name:"Acai Cup", child:"Chloe" },
-    { id:"26525283-gf-banana-blueberry-bread-1", qty:1, name:"GF Banana Blueberry Bread", child:"Chloe" },
-    { id:"26525283-sausage-roll-2", qty:1, name:"Sausage Roll", child:"Chloe" },
+  { id:'26661833', orderId:'26661833', dockets:['dockets/26661833.png'], name:"Hannah & Koen", parent:"Bronwyn Stafford", pickup:"10:30am", orderNotes:"Stafford", items:[
+    { id:"26661833-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Koen lunch", child:"Koen" },
+    { id:"26661833-juicies-tube-lemonade-1", qty:2, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah and Koen for recess", child:"Hannah & Koen" },
+    { id:"26661833-pies-creamy-mushroom-2", qty:1, name:"Pies (Creamy Mushroom)", lineNotes:"Hannah", child:"Hannah" },
   ]},
-  { id:'26525015', orderId:'26525015', dockets:['dockets/26525015.png'], name:"Ben & Clara", parent:"Amanda Thompson", pickup:"11:00am", items:[
-    { id:"26525015-juicies-tube-wildberry-0", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Clara", child:"Clara" },
-    { id:"26525015-nacho-bowl-1", qty:1, name:"Nacho Bowl", lineNotes:"Clara", child:"Clara" },
-    { id:"26525015-vegan-pastry-rolls-spinach-and-tofu-ricotta-2", qty:1, name:"Vegan Pastry Rolls (Spinach and Tofu Ricotta)", lineNotes:"Ben", child:"Ben" },
+  { id:'26660977', orderId:'26660977', dockets:['dockets/26660977.png'], name:"Oscar Roki", parent:"Luke Roki", pickup:"10:45am", orderNotes:"Oscar Roki", items:[
+    { id:"26660977-juicies-tube-wildberry-0", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Oscar Roki", child:"Oscar" },
   ]},
-  { id:'26524940', orderId:'26524940', dockets:['dockets/26524940.png'], name:"Ruthie & Abigail Musk", parent:"Asmitra Musk", pickup:"10:00am", items:[
-    { id:"26524940-nacho-bowl-0", qty:1, name:"Nacho Bowl" },
+  { id:'26660371', orderId:'26660371', dockets:['dockets/26660371.png'], name:"Maja Rees (Kindy)", parent:"Joel Rees", pickup:"Wed 11 9:00am", orderNotes:"Maja - Kindy", items:[
+    { id:"26660371-pies-peppersteak-0", qty:1, name:"Pies (Peppersteak)", child:"Maja" },
+  ]},
+  { id:'26658370', orderId:'26658370', dockets:['dockets/26658370.png'], name:"Chloe", parent:"Karina Mora", pickup:"10:00am", items:[
+    { id:"26658370-gf-banana-blueberry-bread-0", qty:1, name:"GF Banana Blueberry Bread", child:"Chloe" },
+    { id:"26658370-gf-banana-bread-1", qty:1, name:"GF Banana Bread", child:"Chloe" },
+    { id:"26658370-hemp-cheese-tomato-toastie-2", qty:1, name:"Hemp Cheese & Tomato Toastie", child:"Chloe" },
+    { id:"26658370-sausage-roll-3", qty:1, name:"Sausage Roll", child:"Chloe" },
   ]},
 ];
 expandPeople(PEOPLE);
