@@ -62,9 +62,25 @@
   }
   .item input { width: 26px; height: 26px; margin-top: 1px; flex-shrink: 0; accent-color: var(--accent); }
   .item.done .label { text-decoration: line-through; color: var(--muted); }
-  .label { font-size: 0.98rem; line-height: 1.35; flex: 1; }
+  .label { font-size: 0.98rem; line-height: 1.35; }
+  .label-col { flex: 1; min-width: 0; }
   .qty { display: inline-block; min-width: 1.6em; font-weight: 700; color: var(--accent); margin-right: 4px; }
-  .special { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--warn); font-weight: 600; }
+  .special, .order-request, .prep-flag {
+    display: block; margin-top: 8px; padding: 10px 12px; border-radius: 12px;
+    background: #ffedd5; border: 2px solid #ea580c; color: #9a3412;
+    font-size: 1rem; font-weight: 800; line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .special-kicker {
+    display: block; margin-bottom: 3px; font-size: 0.72rem; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; color: #c2410c;
+  }
+  .item.has-request { align-items: flex-start; background: #fff7ed; margin: 4px -6px; padding: 8px 6px; border-radius: 12px; }
+  .item.has-request .btn-move { margin-top: 6px; }
+  .order-request { margin: 8px 0 4px; }
+  .child.has-request { box-shadow: inset 6px 0 0 #ea580c; }
+  .item.done .special, .item.done .special-kicker, .prep-row.done .prep-flag { text-decoration: none; color: #9a3412; }
+  .item.done .special-kicker { color: #c2410c; }
   .unit-tag {
     display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 999px;
     background: #f5f5f4; color: var(--muted); font-size: 0.72rem; font-weight: 800;
@@ -133,6 +149,8 @@
     margin-top: 10px; white-space: pre-wrap; line-height: 1.45;
     background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px; padding: 10px 12px;
   }
+  #reportPage h2 { font-size: 1.05rem; margin: 4px 0 10px; }
+  .request-entry .note { font-weight: 800; color: #9a3412; border-color: #ea580c; font-size: 1rem; }
   .report-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .report-actions button {
     flex: 1; min-width: 120px; padding: 12px; border-radius: 10px; border: none;
@@ -181,12 +199,15 @@
 
 
   .prep-row {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     background: var(--card); border: 1px solid var(--line);
     border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
   }
   .prep-row.done { opacity: 0.55; }
   .prep-row.done .prep-name { text-decoration: line-through; }
+  .prep-row.has-request {
+    background: #fff7ed; border-color: #ea580c; box-shadow: inset 6px 0 0 #ea580c;
+  }
   .prep-qty {
     min-width: 48px; height: 48px; border-radius: 12px;
     background: var(--accent); color: #fff;
@@ -194,8 +215,10 @@
     font-weight: 900; font-size: 1.1rem; flex-shrink: 0;
   }
   .prep-row.done .prep-qty { background: #a8a29e; }
-  .prep-name { font-weight: 700; font-size: 1rem; flex: 1; }
-  .prep-row input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--accent); flex-shrink: 0; }
+  .prep-body { flex: 1; min-width: 0; }
+  .prep-name { font-weight: 700; font-size: 1rem; display: block; padding-top: 12px; }
+  .prep-row.has-request .prep-name { padding-top: 4px; }
+  .prep-row input[type=checkbox] { width: 26px; height: 26px; margin-top: 11px; accent-color: var(--accent); flex-shrink: 0; }
   .tabs { flex-wrap: wrap; }
   .tab { font-size: 0.82rem; }
   /* Five tabs: on phones, prep + checklist on the first row, handout on the second. */
@@ -313,9 +336,13 @@ const LAST_PULL = 'Wed 18 Nov 2026, 12:30pm AEDT'; // update on every Bopple pul
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
-// then the product default (order notes are ignored) (snacks → recess, everything else → lunch).
+// product default (snacks → recess, everything else → lunch). Order notes are
+// ignored for service so "School Lunch Order" does not move every item.
 // Future pulls should store lineNotes/orderNotes and call assignService — do not
 // hard-code service from the product list alone.
+// Display is separate from service. lineRequest/orderRequest surface an instruction
+// (the full original note). A note that is only a child's name and/or recess/lunch
+// stays off the cards: the child tag and the service split already show that.
 function explicitService(text){
   if (!text) return null;
   const s = String(text).toLowerCase();
@@ -339,6 +366,82 @@ function productDefaultService(name){
 }
 function assignService(name, lineNotes, orderNotes){
   return explicitService(lineNotes) || productDefaultService(name); // order-level notes never override
+}
+// Words that identify who/where/which service, not how to make or hand out the food.
+// Kept short on purpose: any other word means the whole note is shown to staff.
+const IDENTITY_WORDS = new Set(['recess','lunch','for','and','the','a','an','of','to','my','our','order','orders','canteen','toronto','tas','kindy','kinder','kindergarten','class','grade','year','prep','school','adventist','primary']);
+function nameTokens(){
+  const bag = new Set();
+  for (const part of arguments) {
+    String(part || '').toLowerCase().split(/[^a-z0-9']+/).forEach(w => { if (w) bag.add(w); });
+  }
+  return bag;
+}
+function isIdentityOnly(text, bag){
+  const words = String(text || '').toLowerCase().split(/[^a-z0-9']+/).filter(Boolean);
+  if (!words.length) return true;
+  for (const w of words) {
+    if (w.length === 1 || /^\d+$/.test(w)) continue;
+    if (bag.has(w) || IDENTITY_WORDS.has(w)) continue;
+    return false;
+  }
+  return true;
+}
+function lineRequest(item, person){
+  const curated = String(item.special || '').trim();
+  if (curated) return curated;
+  const note = String(item.lineNotes || '').trim();
+  if (!note) return '';
+  const bag = nameTokens(person && person.name, person && person.parent, item.child);
+  return isIdentityOnly(note, bag) ? '' : note;
+}
+function orderRequest(person){
+  const note = String(person && person.orderNotes || '').trim();
+  if (!note) return '';
+  // Handout passes a service slice; classify against the full order so a
+  // sibling's name still counts as identity on the other service.
+  const source = (typeof PEOPLE !== 'undefined' && PEOPLE.find(p => p.id === person.id)) || person;
+  const kids = (source.items || []).map(i => i.child);
+  const bag = nameTokens(source.name, source.parent, person.name, person.parent, ...kids);
+  return isIdentityOnly(note, bag) ? '' : note;
+}
+function addAggRequest(row, kind, text, who, qty){
+  if (!text) return;
+  const found = row.requests.find(r => r.kind === kind && r.text === text && r.who === who);
+  if (found) found.qty += qty;
+  else row.requests.push({ kind, text, who, qty });
+}
+function formatRequestFlag(r){
+  if (r.kind === 'order') {
+    return `Order note: ${r.text} (${r.who})`;
+  }
+  const prefix = r.qty === 1 ? '1 special request' : `${r.qty} special requests`;
+  return `${prefix}: ${r.text} (${r.who})`;
+}
+function requestFlagsHtml(requests){
+  return (requests || []).map(r => `<span class="prep-flag">${escapeHtml(formatRequestFlag(r))}</span>`).join('');
+}
+function collectPersonRequests(person){
+  const lines = [];
+  const order = orderRequest(person);
+  if (order) lines.push({ kind:'order', item:'', text:order, qty:1 });
+  const map = new Map();
+  for (const i of person.items || []) {
+    const text = lineRequest(i, person);
+    if (!text) continue;
+    const key = i.name + '\0' + text;
+    const prev = map.get(key) || { kind:'item', item:i.name, text, qty:0 };
+    prev.qty += i.qty || 1;
+    map.set(key, prev);
+  }
+  for (const v of map.values()) lines.push(v);
+  return lines;
+}
+function peopleWithRequests(){
+  return PEOPLE
+    .map(p => ({ p, lines: collectPersonRequests(p) }))
+    .filter(x => x.lines.length)
+    .sort((a, b) => a.p.name.localeCompare(b.p.name));
 }
 function expandItem(item, orderNotes){
   const qty = Math.max(1, item.qty || 1);
@@ -463,15 +566,17 @@ function itemsForService(svc){
 function aggregatePrep(svc){
   const map = new Map();
   for (const p of PEOPLE){
+    const orderText = orderRequest(p);
     for (const i of p.items){
       if (effectiveService(i) !== svc) continue;
-      const prev = map.get(i.name) || 0;
-      map.set(i.name, prev + i.qty);
+      let row = map.get(i.name);
+      if (!row) { row = { id: prepKey(svc, i.name), name: i.name, qty: 0, requests: [] }; map.set(i.name, row); }
+      row.qty += i.qty;
+      addAggRequest(row, 'item', lineRequest(i, p), p.name, i.qty);
+      addAggRequest(row, 'order', orderText, p.name, i.qty);
     }
   }
-  return [...map.entries()]
-    .map(([name, qty]) => ({ id: prepKey(svc, name), name, qty }))
-    .sort((a,b) => a.name.localeCompare(b.name));
+  return [...map.values()].sort((a,b) => a.name.localeCompare(b.name));
 }
 // Global stock list: every expanded unit once, across both services.
 // A service move only changes effectiveService; it does not copy the line,
@@ -480,15 +585,22 @@ function aggregatePrep(svc){
 function aggregateChecklist(){
   const map = new Map();
   for (const p of PEOPLE){
+    const orderText = orderRequest(p);
     for (const i of p.items){
-      const prev = map.get(i.name) || 0;
-      map.set(i.name, prev + i.qty);
+      let row = map.get(i.name);
+      if (!row) { row = { id: checklistKey(i.name), name: i.name, qty: 0, requests: [] }; map.set(i.name, row); }
+      row.qty += i.qty;
+      addAggRequest(row, 'item', lineRequest(i, p), p.name, i.qty);
+      addAggRequest(row, 'order', orderText, p.name, i.qty);
     }
   }
-  map.set(CHECKLIST_LETTUCE, (map.get(CHECKLIST_LETTUCE) || 0) + 1);
-  return [...map.entries()]
-    .map(([name, qty]) => ({ id: checklistKey(name), name, qty }))
-    .sort((a,b) => a.name.localeCompare(b.name));
+  let lettuce = map.get(CHECKLIST_LETTUCE);
+  if (!lettuce) {
+    lettuce = { id: checklistKey(CHECKLIST_LETTUCE), name: CHECKLIST_LETTUCE, qty: 0, requests: [] };
+    map.set(CHECKLIST_LETTUCE, lettuce);
+  }
+  lettuce.qty += 1;
+  return [...map.values()].sort((a,b) => a.name.localeCompare(b.name));
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function render(){
@@ -522,9 +634,13 @@ function render(){
     }
     list.innerHTML = rows.map(r => {
       const isDone = !!done[r.id];
-      return `<label class="prep-row ${isDone?'done':''}">
+      const flags = requestFlagsHtml(r.requests);
+      return `<label class="prep-row ${isDone?'done':''}${flags?' has-request':''}">
         <span class="prep-qty">${r.qty}</span>
-        <span class="prep-name">${escapeHtml(r.name)}</span>
+        <span class="prep-body">
+          <span class="prep-name">${escapeHtml(r.name)}</span>
+          ${flags}
+        </span>
         <input type="checkbox" data-id="${escapeHtml(r.id)}" ${isDone?'checked':''}/>
       </label>`;
     }).join('');
@@ -541,13 +657,15 @@ function render(){
     groups = groups.map(g => {
       const parentHit = (g.parent||'').toLowerCase().includes(q);
       const nameHit = (g.name||'').toLowerCase().includes(q);
+      const orderHit = (g.orderNotes||'').toLowerCase().includes(q);
       const items = g.items.filter(i =>
-        parentHit || nameHit ||
+        parentHit || nameHit || orderHit ||
         (i.name||'').toLowerCase().includes(q) ||
         (i.special||'').toLowerCase().includes(q) ||
+        (i.lineNotes||'').toLowerCase().includes(q) ||
         (i.child||'').toLowerCase().includes(q)
       );
-      if (parentHit || nameHit) return { ...g, items: g.items };
+      if (parentHit || nameHit || orderHit) return { ...g, items: g.items };
       return { ...g, items };
     }).filter(g => g.items.length);
   }
@@ -587,11 +705,17 @@ function render(){
       const unitTag = i.unitTotal > 1 ? `<span class="unit-tag">${i.unit} of ${i.unitTotal}</span>` : '';
       const movedHint = (serviceMoves[i.id] && serviceMoves[i.id] !== i.service)
         ? `<span class="moved-hint">moved from ${escapeHtml(i.service)}</span>` : '';
-      const special = i.special ? `<span class="special">${escapeHtml(i.special)}</span>` : '';
-      return `<div class="item ${isDone?'done':''}">
+      const request = lineRequest(i, g);
+      const special = request
+        ? `<span class="special"><span class="special-kicker">Special request</span>${escapeHtml(request)}</span>`
+        : '';
+      return `<div class="item ${isDone?'done':''}${request?' has-request':''}">
         <label class="item-main">
           <input type="checkbox" data-id="${escapeHtml(i.id)}" ${isDone?'checked':''}/>
-          <span class="label">${unitTag}${childTag}${escapeHtml(i.name)}${special}${movedHint}</span>
+          <span class="label-col">
+            <span class="label">${unitTag}${childTag}${escapeHtml(i.name)}${movedHint}</span>
+            ${special}
+          </span>
         </label>
         <button type="button" class="btn-move" data-move-id="${escapeHtml(i.id)}" data-move-to="${other}" aria-label="Move ${escapeHtml(i.name)} to ${otherLabel}">→ ${otherLabel}</button>
       </div>`;
@@ -603,9 +727,15 @@ function render(){
     const docketBtn = dockets.length
       ? `<button type="button" class="btn-docket" data-dockets="${escapeHtml(JSON.stringify(dockets))}" data-docket-name="${escapeHtml(g.name)}">View docket</button>`
       : '';
-    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${g.id}">
+    const orderNote = orderRequest(g);
+    const orderBanner = orderNote
+      ? `<div class="order-request"><span class="special-kicker">Order note</span>${escapeHtml(orderNote)}</div>`
+      : '';
+    const anyRequest = !!(orderNote || g.items.some(i => lineRequest(i, g)));
+    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}${anyRequest?' has-request':''}" data-person="${g.id}">
       <div class="child-head"><div class="child-head-text"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
       ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>${docketBtn}</div>
+      ${orderBanner}
       ${rows}
       <div class="obs-wrap">
         <label for="obs-${g.id}">Observations</label>
@@ -652,9 +782,41 @@ function entriesWithObs() {
     .filter(x => x.note)
     .sort((a, b) => a.p.name.localeCompare(b.p.name));
 }
+function requestReportHtml() {
+  const rows = peopleWithRequests();
+  if (!rows.length) return '';
+  return `<h2>Customer special requests</h2>` + rows.map(({ p, lines }) => {
+    const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+    const body = lines.map(r => {
+      if (r.kind === 'order') return `<div class="note"><span class="special-kicker">Order note</span>${escapeHtml(r.text)}</div>`;
+      const qty = r.qty > 1 ? ` ×${r.qty}` : '';
+      return `<div class="note"><span class="special-kicker">${escapeHtml(r.item + qty)}</span>${escapeHtml(r.text)}</div>`;
+    }).join('');
+    return `<article class="obs-entry request-entry">
+      <div class="who">${escapeHtml(p.name)}${p.missing ? ' <span class="badge">WAS MISSING</span>' : ''}</div>
+      ${meta ? `<div class="who-meta">${escapeHtml(meta)}</div>` : ''}
+      ${body}
+    </article>`;
+  }).join('');
+}
 function buildReportText() {
   const lines = [];
   const now = new Date();
+  const reqRows = peopleWithRequests();
+  if (reqRows.length) {
+    lines.push('Customer special requests — ' + formatReportDate(now));
+    lines.push('');
+    for (const { p, lines: reqs } of reqRows) {
+      const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+      lines.push(p.name);
+      if (meta) lines.push(meta);
+      for (const r of reqs) {
+        if (r.kind === 'order') lines.push('Order note: ' + r.text);
+        else lines.push(r.item + (r.qty > 1 ? ' x' + r.qty : '') + ': ' + r.text);
+      }
+      lines.push('');
+    }
+  }
   lines.push('Observations — ' + formatReportDate(now));
   lines.push('Generated: ' + now.toLocaleString('en-AU'));
   lines.push('');
@@ -677,10 +839,11 @@ function openReport() {
   document.getElementById('reportDate').textContent = formatReportDate(now);
   const box = document.getElementById('reportEntries');
   const rows = entriesWithObs();
+  const requests = requestReportHtml();
   if (!rows.length) {
-    box.innerHTML = '<div class="report-empty">No observations yet.<br/>Add notes under each order, then come back here.</div>';
+    box.innerHTML = requests + '<div class="report-empty">No observations yet.<br/>Add notes under each order, then come back here.</div>';
   } else {
-    box.innerHTML = rows.map(({ p, note }) => {
+    box.innerHTML = requests + rows.map(({ p, note }) => {
       const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
       return `<article class="obs-entry">
         <div class="who">${escapeHtml(p.name)}${p.missing ? ' <span class="badge">WAS MISSING</span>' : ''}</div>
