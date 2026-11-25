@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Canteen Tick"/>
-<title>FF Canteen Tick · 24 Sep 2026</title>
+<title>FF Canteen Tick · 26 Nov 2026</title>
 <style>
   :root {
     --bg: #f4f1ea; --card: #fff; --ink: #1c1917; --muted: #78716c;
@@ -62,9 +62,25 @@
   }
   .item input { width: 26px; height: 26px; margin-top: 1px; flex-shrink: 0; accent-color: var(--accent); }
   .item.done .label { text-decoration: line-through; color: var(--muted); }
-  .label { font-size: 0.98rem; line-height: 1.35; flex: 1; }
+  .label { font-size: 0.98rem; line-height: 1.35; }
+  .label-col { flex: 1; min-width: 0; }
   .qty { display: inline-block; min-width: 1.6em; font-weight: 700; color: var(--accent); margin-right: 4px; }
-  .special { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--warn); font-weight: 600; }
+  .special, .order-request, .prep-flag {
+    display: block; margin-top: 8px; padding: 10px 12px; border-radius: 12px;
+    background: #ffedd5; border: 2px solid #ea580c; color: #9a3412;
+    font-size: 1rem; font-weight: 800; line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .special-kicker {
+    display: block; margin-bottom: 3px; font-size: 0.72rem; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase; color: #c2410c;
+  }
+  .item.has-request { align-items: flex-start; background: #fff7ed; margin: 4px -6px; padding: 8px 6px; border-radius: 12px; }
+  .item.has-request .btn-move { margin-top: 6px; }
+  .order-request { margin: 8px 0 4px; }
+  .child.has-request { box-shadow: inset 6px 0 0 #ea580c; }
+  .item.done .special, .item.done .special-kicker, .prep-row.done .prep-flag { text-decoration: none; color: #9a3412; }
+  .item.done .special-kicker { color: #c2410c; }
   .unit-tag {
     display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 999px;
     background: #f5f5f4; color: var(--muted); font-size: 0.72rem; font-weight: 800;
@@ -119,6 +135,8 @@
     margin: 10px 0 4px; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;
   }
   #reportPage .report-date { color: var(--muted); font-size: 0.95rem; margin-bottom: 14px; }
+  #reportPage h2 { font-size: 1.05rem; margin: 4px 0 10px; }
+  .request-entry .note { font-weight: 800; color: #9a3412; border-color: #ea580c; font-size: 1rem; }
   #reportPage .report-empty {
     background: var(--card); border: 1px dashed var(--line); border-radius: 14px;
     padding: 28px 16px; text-align: center; color: var(--muted);
@@ -181,12 +199,15 @@
 
 
   .prep-row {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 12px;
     background: var(--card); border: 1px solid var(--line);
     border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
   }
   .prep-row.done { opacity: 0.55; }
   .prep-row.done .prep-name { text-decoration: line-through; }
+  .prep-row.has-request {
+    background: #fff7ed; border-color: #ea580c; box-shadow: inset 6px 0 0 #ea580c;
+  }
   .prep-qty {
     min-width: 48px; height: 48px; border-radius: 12px;
     background: var(--accent); color: #fff;
@@ -194,8 +215,14 @@
     font-weight: 900; font-size: 1.1rem; flex-shrink: 0;
   }
   .prep-row.done .prep-qty { background: #a8a29e; }
-  .prep-name { font-weight: 700; font-size: 1rem; flex: 1; }
-  .prep-row input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--accent); flex-shrink: 0; }
+  .prep-body { flex: 1; min-width: 0; }
+  .prep-name { font-weight: 700; font-size: 1rem; display: block; padding-top: 12px; }
+  .prep-row.has-request .prep-name { padding-top: 4px; }
+  .prep-row input[type=checkbox] { width: 26px; height: 26px; margin-top: 11px; accent-color: var(--accent); flex-shrink: 0; }
+  .restock-head { font-size: 1.05rem; font-weight: 800; margin: 22px 4px 8px; }
+  .restock-row { align-items: center; }
+  .restock-row .prep-name { padding-top: 0; }
+  .restock-row input[type=checkbox] { margin-top: 0; }
   .tabs { flex-wrap: wrap; }
   .tab { font-size: 0.82rem; }
   /* Five tabs: on phones, prep + checklist on the first row, handout on the second. */
@@ -258,7 +285,7 @@
 <body>
 <header class="tick-chrome">
   <h1>Food Farmacy · Canteen Tick</h1>
-  <div class="sub">Thu 19 Nov 2026 · 10 orders · tap to tick off<br><span id="lastPull"></span></div>
+  <div class="sub">Thu 26 Nov 2026 · 13 orders · tap to tick off<br><span id="lastPull"></span></div>
   <div class="tabs">
     <button class="tab active" data-view="prep-recess" type="button">Recess Prep</button>
     <button class="tab" data-view="prep-lunch" type="button">Lunch Prep</button>
@@ -282,7 +309,7 @@
   <button type="button" id="btnReport">Generate observation report</button>
 </header>
 <main id="list"></main>
-<footer class="tick-footer">Food Farmacy canteen · Thu 24 Sep 2026 · ticks and service moves save on this phone</footer>
+<footer class="tick-footer">Food Farmacy canteen · Thu 26 Nov 2026 · ticks and service moves save on this phone</footer>
 
 <section id="reportPage" aria-label="Observations report">
   <div class="report-top">
@@ -308,14 +335,17 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'ff-canteen-tick-2026-11-18-v1';
-const LAST_PULL = 'Wed 18 Nov 2026, 12:30pm AEDT'; // update on every Bopple pull
+const STORAGE_KEY = 'ff-canteen-tick-2026-11-26-v1';
+const LAST_PULL = 'Wed 25 Nov 2026, 3:47pm AEDT'; // update on every Bopple pull
 // FF Checklist ticks live in this same object as "checklist:<item name>".
 // Bump STORAGE_KEY each new pull so old ticks reset.
 // Service for a line: explicit "lunch"/"recess" in that line's notes wins, then the
-// then the product default (order notes are ignored) (snacks → recess, everything else → lunch).
-// Future pulls should store lineNotes/orderNotes and call assignService — do not
-// hard-code service from the product list alone.
+// product default (snacks → recess, everything else → lunch). Order notes are
+// ignored for service. Future pulls should store lineNotes/orderNotes and call
+// assignService — do not hard-code service from the product list alone.
+// Display is separate from service. A note is a staff instruction when it says
+// something besides who the food is for and which service it is. Name-only and
+// recess/lunch notes stay off the cards. The full original wording is shown.
 function explicitService(text){
   if (!text) return null;
   const s = String(text).toLowerCase();
@@ -340,6 +370,77 @@ function productDefaultService(name){
 function assignService(name, lineNotes, orderNotes){
   return explicitService(lineNotes) || productDefaultService(name); // order-level notes never override
 }
+// Words that identify who or which service, not how to make or hand out the food.
+const IDENTITY_WORDS = new Set(['recess','lunch','for','and','the','a','an','of','to','my','our','order','orders','canteen','toronto','tas','kindy','kinder','kindergarten','class','grade','year','prep','school','adventist','primary']);
+function nameTokens(){
+  const bag = new Set();
+  for (const part of arguments) {
+    String(part || '').toLowerCase().split(/[^a-z0-9']+/).forEach(w => { if (w) bag.add(w); });
+  }
+  return bag;
+}
+function isIdentityOnly(text, bag){
+  const words = String(text || '').toLowerCase().split(/[^a-z0-9']+/).filter(Boolean);
+  if (!words.length) return true;
+  for (const w of words) {
+    if (w.length === 1 || /^\d+$/.test(w)) continue;
+    if (bag.has(w) || IDENTITY_WORDS.has(w)) continue;
+    return false;
+  }
+  return true;
+}
+function lineRequest(item, person){
+  const curated = String(item.special || '').trim();
+  if (curated) return curated;
+  const note = String(item.lineNotes || '').trim();
+  if (!note) return '';
+  const bag = nameTokens(person && person.name, person && person.parent, item.child);
+  return isIdentityOnly(note, bag) ? '' : note;
+}
+function orderRequest(person){
+  const note = String(person && person.orderNotes || '').trim();
+  if (!note) return '';
+  const source = (typeof PEOPLE !== 'undefined' && PEOPLE.find(p => p.id === person.id)) || person;
+  const kids = (source.items || []).map(i => i.child);
+  const bag = nameTokens(source.name, source.parent, person.name, person.parent, ...kids);
+  return isIdentityOnly(note, bag) ? '' : note;
+}
+function addAggRequest(row, kind, text, who, qty){
+  if (!text) return;
+  const found = row.requests.find(r => r.kind === kind && r.text === text && r.who === who);
+  if (found) found.qty += qty;
+  else row.requests.push({ kind, text, who, qty });
+}
+function formatRequestFlag(r){
+  if (r.kind === 'order') return `Order note: ${r.text} (${r.who})`;
+  const prefix = r.qty === 1 ? '1 special request' : `${r.qty} special requests`;
+  return `${prefix}: ${r.text} (${r.who})`;
+}
+function requestFlagsHtml(requests){
+  return (requests || []).map(r => `<span class="prep-flag">${escapeHtml(formatRequestFlag(r))}</span>`).join('');
+}
+function collectPersonRequests(person){
+  const lines = [];
+  const order = orderRequest(person);
+  if (order) lines.push({ kind:'order', item:'', text:order, qty:1 });
+  const map = new Map();
+  for (const i of person.items || []) {
+    const text = lineRequest(i, person);
+    if (!text) continue;
+    const key = i.name + '\0' + text;
+    const prev = map.get(key) || { kind:'item', item:i.name, text, qty:0 };
+    prev.qty += i.qty || 1;
+    map.set(key, prev);
+  }
+  for (const v of map.values()) lines.push(v);
+  return lines;
+}
+function peopleWithRequests(){
+  return PEOPLE
+    .map(p => ({ p, lines: collectPersonRequests(p) }))
+    .filter(x => x.lines.length)
+    .sort((a, b) => a.p.name.localeCompare(b.p.name));
+}
 function expandItem(item, orderNotes){
   const qty = Math.max(1, item.qty || 1);
   const service = assignService(item.name, item.lineNotes, orderNotes);
@@ -363,53 +464,63 @@ function expandPeople(people){
   }
 }
 const PEOPLE = [
-  { id:'26804836', orderId:'26804836', dockets:['dockets/26804836.svg'], name:"Ariana & Emilia", parent:"Natasha Curnow", pickup:"Thu 19 11:00am", orderNotes:"Ariana and Emilia Curnow TAS Canteen order", items:[
-    { id:"26804836-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Ariana recess", child:"Ariana" },
-    { id:"26804836-gf-buckwheat-choc-chip-cookie-1", qty:1, name:"GF Buckwheat Choc Chip Cookie", lineNotes:"Emilia recess", child:"Emilia" },
-    { id:"26804836-juicies-tube-lemonade-2", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Emilia lunch", child:"Emilia" },
-    { id:"26804836-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Ariana lunch", child:"Ariana" },
+  { id:'26931081', orderId:'26931081', dockets:['dockets/26931081.svg'], name:"Diane Lapuz Hope", parent:"Diane Lapuz Hope (staff complimentary)", pickup:"Thu 26 9:00am", items:[
+    { id:"26931081-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
+    { id:"26931081-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
   ]},
-  { id:'26802454', orderId:'26802454', dockets:['dockets/26802454.svg'], name:"Oscar Roki", parent:"Luke Roki", pickup:"Thu 19 11:15am", orderNotes:"Oscar Roki", items:[
-    { id:"26802454-juicies-tube-wildberry-0", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Oscar Roki", child:"Oscar" },
+  { id:'26932659', orderId:'26932659', dockets:['dockets/26932659.svg'], name:"Maja Rees", parent:"Joel Rees", pickup:"Thu 26 9:00am", items:[
+    { id:"26932659-juicies-100ml-watermelon-0", qty:1, name:"Juicies 100ml - Watermelon", child:"Maja" },
+    { id:"26932659-pies-peppersteak-1", qty:1, name:"Pies (Peppersteak)", child:"Maja" },
   ]},
-  { id:'26799864', orderId:'26799864', dockets:['dockets/26799864.svg'], name:"Hannah Deves", parent:"Alexis Deves", pickup:"Thu 19 10:00am", orderNotes:"Hannah Deves- Toronto", items:[
-    { id:"26799864-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah Deves - Toronto" },
-    { id:"26799864-sausage-roll-1", qty:1, name:"Sausage Roll", lineNotes:"Hannah Deves - Toronto" },
+  { id:'26933626', orderId:'26933626', dockets:['dockets/26933626.svg'], name:"Haon & Paul", parent:"JaeDeok Yu", pickup:"Thu 26 10:00am", items:[
+    { id:"26933626-nacho-bowl-0", qty:1, name:"Nacho Bowl" },
   ]},
-  { id:'26799378', orderId:'26799378', dockets:['dockets/26799378.svg'], name:"Debra Clarke (teacher)", parent:"Debra Clarke (teacher, for herself)", pickup:"Thu 19 1:00pm", orderNotes:"This is actually for the Toronto School Lunch Order - I won't be picking it up from the Restaurant.", items:[
-    { id:"26799378-nacho-bowl-0", qty:1, name:"Nacho Bowl" },
+  { id:'26934296', orderId:'26934296', dockets:['dockets/26934296.svg'], name:"Chloe & Matthias", parent:"Karina Mora", pickup:"Thu 26 10:00am", items:[
+    { id:"26934296-gf-banana-blueberry-bread-0", qty:1, name:"GF Banana Blueberry Bread" },
+    { id:"26934296-gf-banana-bread-1", qty:1, name:"GF Banana Bread" },
+    { id:"26934296-sausage-roll-2", qty:1, name:"Sausage Roll" },
   ]},
-  { id:'26799237', orderId:'26799237', dockets:['dockets/26799237.svg'], name:"Tiana & Zion", parent:"Letitia Campbell", pickup:"Thu 19 11:00am", items:[
-    { id:"26799237-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)" },
-    { id:"26799237-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)" },
-    { id:"26799237-refried-beans-toastie-2", qty:1, name:"Refried Beans Toastie" },
-    { id:"26799237-sausage-roll-3", qty:2, name:"Sausage Roll" },
+  { id:'26937662', orderId:'26937662', dockets:['dockets/26937662.svg'], name:"Hannah Deves", parent:"Alexis Deves", pickup:"Thu 26 10:00am", orderNotes:"Hannah Deves - Toronto", items:[
+    { id:"26937662-juicies-tube-lemonade-0", qty:1, name:"Juicies Tube (Lemonade)", lineNotes:"Hannah Deves - Toronto", child:"Hannah" },
+    { id:"26937662-sausage-roll-1", qty:1, name:"Sausage Roll", lineNotes:"Hannah Deves - Toronto", child:"Hannah" },
   ]},
-  { id:'26798940', orderId:'26798940', dockets:['dockets/26798940.svg'], name:"Hannah & Koen", parent:"Bronwyn Stafford", pickup:"Thu 19 10:30am", orderNotes:"Stafford", items:[
-    { id:"26798940-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Koen lunch", child:"Koen" },
-    { id:"26798940-gf-banana-bread-1", qty:1, name:"GF Banana Bread", lineNotes:"Koen for recess", child:"Koen" },
-    { id:"26798940-juicies-tube-wildberry-2", qty:2, name:"Juicies Tube (Wildberry)", lineNotes:"Hannah and Koen for recess", child:"Hannah & Koen" },
-    { id:"26798940-pies-creamy-mushroom-3", qty:1, name:"Pies (Creamy Mushroom)", lineNotes:"Hannah", child:"Hannah" },
+  { id:'26934171', orderId:'26934171', dockets:['dockets/26934171.svg'], name:"ASMITRA MUSK", parent:"ASMITRA MUSK", pickup:"Thu 26 10:15am", items:[
+    { id:"26934171-juicies-100ml-watermelon-0", qty:2, name:"Juicies 100ml - Watermelon" },
+    { id:"26934171-sausage-roll-1", qty:1, name:"Sausage Roll" },
+    { id:"26934171-tempeh-chips-sea-weed-2", qty:1, name:"Tempeh Chips (Sea Weed)" },
   ]},
-  { id:'26798729', orderId:'26798729', dockets:['dockets/26798729.svg'], name:"Chloe & Matthias", parent:"Karina Mora", pickup:"Thu 19 10:00am", items:[
-    { id:"26798729-gf-banana-blueberry-bread-0", qty:1, name:"GF Banana Blueberry Bread", child:"Chloe" },
-    { id:"26798729-gf-banana-bread-1", qty:1, name:"GF Banana Bread", child:"Chloe" },
-    { id:"26798729-sausage-roll-2", qty:1, name:"Sausage Roll", child:"Chloe" },
+  { id:'26932848', orderId:'26932848', dockets:['dockets/26932848.svg'], name:"Hannah & Koen", parent:"Bronwyn Stafford", pickup:"Thu 26 10:30am", orderNotes:"Stafford", items:[
+    { id:"26932848-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Koen lunch", child:"Koen" },
+    { id:"26932848-juicies-tube-wildberry-1-hannah", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Hannah and Koen for recess", child:"Hannah" },
+    { id:"26932848-juicies-tube-wildberry-1-koen", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Hannah and Koen for recess", child:"Koen" },
+    { id:"26932848-pies-creamy-mushroom-2", qty:1, name:"Pies (Creamy Mushroom)", lineNotes:"Hannah", child:"Hannah" },
+    { id:"26932848-tempeh-chips-sea-weed-3", qty:1, name:"Tempeh Chips (Sea Weed)", lineNotes:"Hannah", child:"Hannah" },
   ]},
-  { id:'26798075', orderId:'26798075', dockets:['dockets/26798075.svg'], name:"Eloise & Grace", parent:"Melissa Whitson", pickup:"Thu 19 11:00am", items:[
-    { id:"26798075-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"No granola please" },
-    { id:"26798075-juicies-tube-wildberry-1", qty:1, name:"Juicies Tube (Wildberry)" },
-    { id:"26798075-loco-love-chewy-caramel-2", qty:1, name:"Loco Love (Chewy Caramel)" },
-    { id:"26798075-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)" },
+  { id:'26934975', orderId:'26934975', dockets:['dockets/26934975.svg'], name:"Indi & Denali", parent:"Claudia Sheppard", pickup:"Thu 26 11:00am", items:[
+    { id:"26934975-nacho-bowl-0", qty:1, name:"Nacho Bowl", lineNotes:"Indi", child:"Indi" },
+    { id:"26934975-sausage-roll-1", qty:1, name:"Sausage Roll", lineNotes:"Denali", child:"Denali" },
   ]},
-  { id:'26794319', orderId:'26794319', dockets:['dockets/26794319.svg'], name:"Luca Venturi", parent:"Mariana Venturi", pickup:"Thu 19 1:00pm", orderNotes:"Luca Venturi", items:[
-    { id:"26794319-chia-berry-cup-200ml-0", qty:1, name:"Chia Berry Cup 200ml", child:"Luca" },
+  { id:'26943032', orderId:'26943032', dockets:['dockets/26943032.svg'], name:"Ariana", parent:"Natasha Curnow", pickup:"Thu 26 11:00am", orderNotes:"Ariana Curnow TAS canteen order", items:[
+    { id:"26943032-acai-cup-0", qty:1, name:"Acai Cup", lineNotes:"Ariana recess", child:"Ariana" },
+    { id:"26943032-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Ariana lunch", child:"Ariana" },
   ]},
-  { id:'26787018', orderId:'26787018', dockets:['dockets/26787018.svg'], name:"Abigail & Mario", parent:"Karin Gonzalez", pickup:"Thu 19 12:00pm", items:[
-    { id:"26787018-gf-oats-and-raisin-cookie-0", qty:1, name:"GF Oats and Raisin Cookie", lineNotes:"Abigail P", child:"Abigail" },
-    { id:"26787018-pasta-napolitana-sauce-whole-wheat-1", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Abigail P", child:"Abigail" },
-    { id:"26787018-pasta-napolitana-sauce-whole-wheat-2", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"No sauce only oil and salt please Mario P", child:"Mario" },
-    { id:"26787018-gluten-free-banana-bread-plain-3", qty:1, name:"Gluten-free Banana Bread (Plain)", lineNotes:"Mario", child:"Mario" },
+  { id:'26944617', orderId:'26944617', dockets:['dockets/26944617.svg'], name:"Tiana & Zion", parent:"Letitia Campbell", pickup:"Thu 26 11:00am", items:[
+    { id:"26944617-juicies-tube-lemonade-0", qty:2, name:"Juicies Tube (Lemonade)" },
+    { id:"26944617-pies-creamy-mushroom-1", qty:1, name:"Pies (Creamy Mushroom)" },
+    { id:"26944617-sausage-roll-2", qty:2, name:"Sausage Roll" },
+  ]},
+  { id:'26943559', orderId:'26943559', dockets:['dockets/26943559.svg'], name:"Oscar Roki", parent:"Luke Roki", pickup:"Thu 26 12:15pm", orderNotes:"Oscar Roki", items:[
+    { id:"26943559-juicies-tube-wildberry-0", qty:1, name:"Juicies Tube (Wildberry)", lineNotes:"Oscar Roki", child:"Oscar" },
+  ]},
+  { id:'26930983', orderId:'26930983', dockets:['dockets/26930983.svg'], name:"Abigail & Mario", parent:"Karin Gonzalez", pickup:"Thu 26 12:30pm", items:[
+    { id:"26930983-gf-banana-bread-0", qty:1, name:"GF Banana Bread", lineNotes:"Mario", child:"Mario" },
+    { id:"26930983-gf-oats-and-raisin-cookie-1", qty:1, name:"GF Oats and Raisin Cookie", lineNotes:"Abi", child:"Abigail (Abi)" },
+    { id:"26930983-nudi-juice-200ml-apple-2", qty:1, name:"Nudi Juice 200ml (Apple)", lineNotes:"No substitutes" },
+    { id:"26930983-pasta-napolitana-sauce-whole-wheat-3", qty:1, name:"Pasta & Napolitana Sauce (Whole Wheat)", lineNotes:"Mario no sauce and please add salt", child:"Mario" },
+    { id:"26930983-refried-beans-toastie-4", qty:1, name:"Refried Beans Toastie", lineNotes:"Abi", child:"Abigail (Abi)" },
+  ]},
+  { id:'26930181', orderId:'26930181', dockets:['dockets/26930181.svg'], name:"Luca Venturi", parent:"Mariana Venturi", pickup:"Thu 26 1:00pm", orderNotes:"Luca Venturi", items:[
+    { id:"26930181-chia-berry-cup-200ml-0", qty:1, name:"Chia Berry Cup 200ml", child:"Luca" },
   ]},
 ];
 expandPeople(PEOPLE);
@@ -463,15 +574,17 @@ function itemsForService(svc){
 function aggregatePrep(svc){
   const map = new Map();
   for (const p of PEOPLE){
+    const orderText = orderRequest(p);
     for (const i of p.items){
       if (effectiveService(i) !== svc) continue;
-      const prev = map.get(i.name) || 0;
-      map.set(i.name, prev + i.qty);
+      let row = map.get(i.name);
+      if (!row) { row = { id: prepKey(svc, i.name), name: i.name, qty: 0, requests: [] }; map.set(i.name, row); }
+      row.qty += i.qty;
+      addAggRequest(row, 'item', lineRequest(i, p), p.name, i.qty);
+      addAggRequest(row, 'order', orderText, p.name, i.qty);
     }
   }
-  return [...map.entries()]
-    .map(([name, qty]) => ({ id: prepKey(svc, name), name, qty }))
-    .sort((a,b) => a.name.localeCompare(b.name));
+  return [...map.values()].sort((a,b) => a.name.localeCompare(b.name));
 }
 // Global stock list: every expanded unit once, across both services.
 // A service move only changes effectiveService; it does not copy the line,
@@ -480,15 +593,47 @@ function aggregatePrep(svc){
 function aggregateChecklist(){
   const map = new Map();
   for (const p of PEOPLE){
+    const orderText = orderRequest(p);
     for (const i of p.items){
-      const prev = map.get(i.name) || 0;
-      map.set(i.name, prev + i.qty);
+      let row = map.get(i.name);
+      if (!row) { row = { id: checklistKey(i.name), name: i.name, qty: 0, requests: [] }; map.set(i.name, row); }
+      row.qty += i.qty;
+      addAggRequest(row, 'item', lineRequest(i, p), p.name, i.qty);
+      addAggRequest(row, 'order', orderText, p.name, i.qty);
     }
   }
-  map.set(CHECKLIST_LETTUCE, (map.get(CHECKLIST_LETTUCE) || 0) + 1);
-  return [...map.entries()]
-    .map(([name, qty]) => ({ id: checklistKey(name), name, qty }))
-    .sort((a,b) => a.name.localeCompare(b.name));
+  let lettuce = map.get(CHECKLIST_LETTUCE);
+  if (!lettuce) {
+    lettuce = { id: checklistKey(CHECKLIST_LETTUCE), name: CHECKLIST_LETTUCE, qty: 0, requests: [] };
+    map.set(CHECKLIST_LETTUCE, lettuce);
+  }
+  lettuce.qty += 1;
+  return [...map.values()].sort((a,b) => a.name.localeCompare(b.name));
+}
+// Buy-list rows on the FF Checklist. Item name only. Ticks share the weekly storage key.
+const RESTOCK_TO_BUY = [
+  'Disposable bowls',
+  'Disposable spoons',
+  'Cutlery kits',
+  'Detergent',
+  'Paper towel',
+  'Corn chips',
+  'Tomato sauce (extra)',
+  'Lettuce (extra)',
+  'Cutlery',
+  'Disposable plates',
+];
+function restockKey(name){ return 'restock:' + name; }
+function restockHtml(){
+  const rows = RESTOCK_TO_BUY.map(name => {
+    const id = restockKey(name);
+    const isDone = !!done[id];
+    return `<label class="prep-row restock-row ${isDone?'done':''}">
+      <span class="prep-body"><span class="prep-name">${escapeHtml(name)}</span></span>
+      <input type="checkbox" data-id="${escapeHtml(id)}" ${isDone?'checked':''}/>
+    </label>`;
+  }).join('');
+  return `<h2 class="restock-head">Restock to buy</h2>${rows}`;
 }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function render(){
@@ -520,14 +665,20 @@ function render(){
       list.innerHTML = `<div class="no-match">${empty}</div>`;
       return;
     }
-    list.innerHTML = rows.map(r => {
+    let html = rows.map(r => {
       const isDone = !!done[r.id];
-      return `<label class="prep-row ${isDone?'done':''}">
+      const flags = requestFlagsHtml(r.requests);
+      return `<label class="prep-row ${isDone?'done':''}${flags?' has-request':''}">
         <span class="prep-qty">${r.qty}</span>
-        <span class="prep-name">${escapeHtml(r.name)}</span>
+        <span class="prep-body">
+          <span class="prep-name">${escapeHtml(r.name)}</span>
+          ${flags}
+        </span>
         <input type="checkbox" data-id="${escapeHtml(r.id)}" ${isDone?'checked':''}/>
       </label>`;
     }).join('');
+    if (checklist) html += restockHtml();
+    list.innerHTML = html;
     return;
   }
 
@@ -541,13 +692,15 @@ function render(){
     groups = groups.map(g => {
       const parentHit = (g.parent||'').toLowerCase().includes(q);
       const nameHit = (g.name||'').toLowerCase().includes(q);
+      const orderHit = (g.orderNotes||'').toLowerCase().includes(q);
       const items = g.items.filter(i =>
-        parentHit || nameHit ||
+        parentHit || nameHit || orderHit ||
         (i.name||'').toLowerCase().includes(q) ||
         (i.special||'').toLowerCase().includes(q) ||
+        (i.lineNotes||'').toLowerCase().includes(q) ||
         (i.child||'').toLowerCase().includes(q)
       );
-      if (parentHit || nameHit) return { ...g, items: g.items };
+      if (parentHit || nameHit || orderHit) return { ...g, items: g.items };
       return { ...g, items };
     }).filter(g => g.items.length);
   }
@@ -587,11 +740,17 @@ function render(){
       const unitTag = i.unitTotal > 1 ? `<span class="unit-tag">${i.unit} of ${i.unitTotal}</span>` : '';
       const movedHint = (serviceMoves[i.id] && serviceMoves[i.id] !== i.service)
         ? `<span class="moved-hint">moved from ${escapeHtml(i.service)}</span>` : '';
-      const special = i.special ? `<span class="special">${escapeHtml(i.special)}</span>` : '';
-      return `<div class="item ${isDone?'done':''}">
+      const request = lineRequest(i, g);
+      const special = request
+        ? `<span class="special"><span class="special-kicker">Special request</span>${escapeHtml(request)}</span>`
+        : '';
+      return `<div class="item ${isDone?'done':''}${request?' has-request':''}">
         <label class="item-main">
           <input type="checkbox" data-id="${escapeHtml(i.id)}" ${isDone?'checked':''}/>
-          <span class="label">${unitTag}${childTag}${escapeHtml(i.name)}${special}${movedHint}</span>
+          <span class="label-col">
+            <span class="label">${unitTag}${childTag}${escapeHtml(i.name)}${movedHint}</span>
+            ${special}
+          </span>
         </label>
         <button type="button" class="btn-move" data-move-id="${escapeHtml(i.id)}" data-move-to="${other}" aria-label="Move ${escapeHtml(i.name)} to ${otherLabel}">→ ${otherLabel}</button>
       </div>`;
@@ -603,9 +762,15 @@ function render(){
     const docketBtn = dockets.length
       ? `<button type="button" class="btn-docket" data-dockets="${escapeHtml(JSON.stringify(dockets))}" data-docket-name="${escapeHtml(g.name)}">View docket</button>`
       : '';
-    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}" data-person="${g.id}">
+    const orderNote = orderRequest(g);
+    const orderBanner = orderNote
+      ? `<div class="order-request"><span class="special-kicker">Order note</span>${escapeHtml(orderNote)}</div>`
+      : '';
+    const anyRequest = !!(orderNote || g.items.some(i => lineRequest(i, g)));
+    return `<section class="child ${allDone?'complete':''} ${g.missing?'missing':''}${anyRequest?' has-request':''}" data-person="${g.id}">
       <div class="child-head"><div class="child-head-text"><div class="child-name">${escapeHtml(g.name)}${badge}</div>
       ${meta?`<div class="child-meta">${escapeHtml(meta)}</div>`:''}</div>${docketBtn}</div>
+      ${orderBanner}
       ${rows}
       <div class="obs-wrap">
         <label for="obs-${g.id}">Observations</label>
@@ -652,9 +817,41 @@ function entriesWithObs() {
     .filter(x => x.note)
     .sort((a, b) => a.p.name.localeCompare(b.p.name));
 }
+function requestReportHtml() {
+  const rows = peopleWithRequests();
+  if (!rows.length) return '';
+  return `<h2>Customer special requests</h2>` + rows.map(({ p, lines }) => {
+    const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+    const body = lines.map(r => {
+      if (r.kind === 'order') return `<div class="note"><span class="special-kicker">Order note</span>${escapeHtml(r.text)}</div>`;
+      const qty = r.qty > 1 ? ` ×${r.qty}` : '';
+      return `<div class="note"><span class="special-kicker">${escapeHtml(r.item + qty)}</span>${escapeHtml(r.text)}</div>`;
+    }).join('');
+    return `<article class="obs-entry request-entry">
+      <div class="who">${escapeHtml(p.name)}${p.missing ? ' <span class="badge">WAS MISSING</span>' : ''}</div>
+      ${meta ? `<div class="who-meta">${escapeHtml(meta)}</div>` : ''}
+      ${body}
+    </article>`;
+  }).join('');
+}
 function buildReportText() {
   const lines = [];
   const now = new Date();
+  const reqRows = peopleWithRequests();
+  if (reqRows.length) {
+    lines.push('Customer special requests — ' + formatReportDate(now));
+    lines.push('');
+    for (const { p, lines: reqs } of reqRows) {
+      const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
+      lines.push(p.name);
+      if (meta) lines.push(meta);
+      for (const r of reqs) {
+        if (r.kind === 'order') lines.push('Order note: ' + r.text);
+        else lines.push(r.item + (r.qty > 1 ? ' x' + r.qty : '') + ': ' + r.text);
+      }
+      lines.push('');
+    }
+  }
   lines.push('Observations — ' + formatReportDate(now));
   lines.push('Generated: ' + now.toLocaleString('en-AU'));
   lines.push('');
@@ -677,10 +874,11 @@ function openReport() {
   document.getElementById('reportDate').textContent = formatReportDate(now);
   const box = document.getElementById('reportEntries');
   const rows = entriesWithObs();
+  const requests = requestReportHtml();
   if (!rows.length) {
-    box.innerHTML = '<div class="report-empty">No observations yet.<br/>Add notes under each order, then come back here.</div>';
+    box.innerHTML = requests + '<div class="report-empty">No observations yet.<br/>Add notes under each order, then come back here.</div>';
   } else {
-    box.innerHTML = rows.map(({ p, note }) => {
+    box.innerHTML = requests + rows.map(({ p, note }) => {
       const meta = [p.parent ? 'Parent: ' + p.parent : null, p.pickup ? 'Pickup ' + p.pickup : null].filter(Boolean).join(' · ');
       return `<article class="obs-entry">
         <div class="who">${escapeHtml(p.name)}${p.missing ? ' <span class="badge">WAS MISSING</span>' : ''}</div>
@@ -711,7 +909,7 @@ document.getElementById('btnDownloadReport').addEventListener('click', () => {
   const blob = new Blob([text], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'canteen-observations-2026-09-24.txt';
+  a.download = 'canteen-observations-2026-11-26.txt';
   a.click();
   URL.revokeObjectURL(a.href);
 });
